@@ -161,16 +161,46 @@ export default function Admin() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Image URL (from Storage)</Label>
+                    <Label>Question Image</Label>
                     <div className="flex gap-2">
-                      <Input 
-                        placeholder="https://..." 
-                        value={q.imageUrl}
-                        onChange={e => updateQuestion(idx, 'imageUrl', e.target.value)}
-                      />
-                      <Button size="icon" variant="secondary">
-                        <Upload className="w-4 h-4" />
-                      </Button>
+                      {q.imageUrl ? (
+                        <div className="relative w-full h-20 border rounded-lg overflow-hidden bg-muted">
+                          <img src={q.imageUrl} alt="Question" className="w-full h-full object-contain" />
+                          <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute top-1 right-1 h-6 w-6"
+                            onClick={() => updateQuestion(idx, 'imageUrl', '')}
+                          >
+                            <Plus className="w-3 h-3 rotate-45" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex-1">
+                          <Input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              
+                              try {
+                                const res = await fetch('/api/upload', {
+                                  method: 'POST',
+                                  body: formData
+                                });
+                                const data = await res.json();
+                                updateQuestion(idx, 'imageUrl', data.url);
+                              } catch (err) {
+                                console.error("Upload failed", err);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
