@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
@@ -31,7 +31,7 @@ export async function registerRoutes(
   app.use("/uploads", (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     next();
-  }, require("express").static(uploadDir));
+  }, express.static(uploadDir));
 
   app.post("/api/upload", upload.single("file"), (req, res) => {
     if (!req.file) {

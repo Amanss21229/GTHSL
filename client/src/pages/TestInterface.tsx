@@ -1,5 +1,5 @@
 import { useRoute, useLocation } from "wouter";
-import { useTest, useSubmitTest } from "@/hooks/use-tests"; // Fix import
+import { useTest } from "@/hooks/use-tests";
 import { useState, useEffect } from "react";
 import Countdown from "react-countdown";
 import { Button } from "@/components/ui/button";
