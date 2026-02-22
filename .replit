@@ -44,3 +44,9 @@ outputType = "webview"
 [agent]
 integrations = ["firebase_barebones_javascript:1.0.0"]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+VITE_ADMIN_PASS1 = "SANAMS805106"
+VITE_ADMIN_PASS2 = "SUC@cess#0708"
