@@ -1,4 +1,3 @@
-import { useAuth } from "@/hooks/use-auth";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +9,22 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAdminTests, Question } from "@/hooks/use-tests";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Admin() {
-  const { user, signIn } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { createTest } = useAdminTests();
   const [loading, setLoading] = useState(false);
-
+  
+  // Auth State
+  const [step, setStep] = useState<'pass1' | 'checking' | 'dashboard_preview' | 'pass2' | 'authorized'>('pass1');
+  const [passInput, setPassInput] = useState("");
+  
   // Form State
   const [section, setSection] = useState<'NEET' | 'JEE'>('NEET');
   const [subsection, setSubsection] = useState('');
@@ -30,11 +36,94 @@ export default function Admin() {
     { questionNumber: 1, imageUrl: '', correctOption: 1 }
   ]);
 
-  if (!user) {
+  const ADMIN_PASS1 = import.meta.env.VITE_ADMIN_PASS1;
+  const ADMIN_PASS2 = import.meta.env.VITE_ADMIN_PASS2;
+
+  useEffect(() => {
+    if (step === 'dashboard_preview') {
+      const timer = setTimeout(() => {
+        setStep('pass2');
+        setPassInput("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
+  const handlePass1Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passInput === ADMIN_PASS1) {
+      setStep('dashboard_preview');
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "Incorrect primary password."
+      });
+      setPassInput("");
+    }
+  };
+
+  const handlePass2Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passInput === ADMIN_PASS2) {
+      setStep('authorized');
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Security Violation",
+        description: "Incorrect final password. Logging out..."
+      });
+      setTimeout(() => setLocation("/"), 1500);
+    }
+  };
+
+  if (step === 'pass1') {
     return (
-      <div className="h-screen flex items-center justify-center flex-col gap-4">
-        <h2 className="text-2xl font-bold">Admin Access Required</h2>
-        <Button onClick={signIn}>Login as Admin</Button>
+      <div className="h-screen flex items-center justify-center bg-background p-4">
+        <div className="glass-card p-8 rounded-2xl w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold">Admin Portal</h2>
+            <p className="text-muted-foreground text-sm">Enter primary access password</p>
+          </div>
+          <form onSubmit={handlePass1Submit} className="space-y-4">
+            <Input 
+              type="password" 
+              placeholder="Primary Password" 
+              value={passInput}
+              onChange={e => setPassInput(e.target.value)}
+              autoFocus
+            />
+            <Button type="submit" className="w-full">Continue</Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'pass2') {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background/80 backdrop-blur-sm fixed inset-0 z-50 p-4">
+        <div className="glass-card p-8 rounded-2xl w-full max-w-md space-y-6 border-destructive/50">
+          <div className="flex justify-center">
+            <div className="bg-destructive/10 p-3 rounded-full">
+              <AlertCircle className="w-8 h-8 text-destructive animate-pulse" />
+            </div>
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-destructive">Error Occurred</h2>
+            <p className="text-muted-foreground text-sm">A security check is required. Enter final verification password.</p>
+          </div>
+          <form onSubmit={handlePass2Submit} className="space-y-4">
+            <Input 
+              type="password" 
+              placeholder="Final Password" 
+              value={passInput}
+              onChange={e => setPassInput(e.target.value)}
+              autoFocus
+            />
+            <Button type="submit" variant="destructive" className="w-full">Verify & Repair</Button>
+          </form>
+        </div>
       </div>
     );
   }
@@ -53,6 +142,7 @@ export default function Admin() {
   };
 
   const handleCreate = async () => {
+    if (step !== 'authorized') return;
     setLoading(true);
     try {
       await createTest({
@@ -61,7 +151,10 @@ export default function Admin() {
         subsection,
         duration: parseInt(duration),
       }, questions);
-      // Reset form (simplified)
+      toast({
+        title: "Success",
+        description: "Test series published successfully!"
+      });
       setTitle('');
       setQuestions([{ questionNumber: 1, imageUrl: '', correctOption: 1 }]);
     } finally {
@@ -69,15 +162,20 @@ export default function Admin() {
     }
   };
 
-  // Note: Image upload is simulated by text input for URL in this demo version
-  // In a real app, you'd use Firebase Storage uploadBytes() here.
-
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className={`min-h-screen bg-background pb-20 ${step === 'dashboard_preview' ? 'pointer-events-none opacity-80' : ''}`}>
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          {step === 'dashboard_preview' && (
+            <div className="flex items-center gap-2 text-amber-500 animate-pulse bg-amber-500/10 px-3 py-1 rounded-full text-sm font-medium">
+              <AlertCircle className="w-4 h-4" />
+              Initializing system...
+            </div>
+          )}
+        </div>
         
         <div className="glass-card p-8 rounded-2xl space-y-8">
           
@@ -230,9 +328,9 @@ export default function Admin() {
             className="w-full" 
             size="lg" 
             onClick={handleCreate} 
-            disabled={loading}
+            disabled={loading || step !== 'authorized'}
           >
-            {loading ? "Creating Test..." : "Publish Test Series"}
+            {loading ? "Creating Test..." : step === 'authorized' ? "Publish Test Series" : "Unlock to Publish"}
           </Button>
 
         </div>
@@ -240,3 +338,4 @@ export default function Admin() {
     </div>
   );
 }
+
