@@ -1,6 +1,7 @@
 import { useRoute, Link } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { useTests } from "@/hooks/use-tests";
+import { useAttempts } from "@/hooks/use-attempts";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +11,9 @@ import {
   School, 
   Building2, 
   Beaker, 
-  PenTool 
+  PenTool,
+  RotateCcw,
+  BarChart2
 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,7 +30,10 @@ export default function Section() {
   const type = params?.type || "NEET";
   const [activeSubsection, setActiveSubsection] = useState(SUBSECTIONS[0].title);
   
-  const { tests, loading } = useTests(type, activeSubsection);
+  const { tests, loading: loadingTests } = useTests(type, activeSubsection);
+  const { attempts, loading: loadingAttempts } = useAttempts();
+
+  const loading = loadingTests || loadingAttempts;
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,37 +89,61 @@ export default function Section() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {tests.map((test, idx) => (
-                  <motion.div
-                    key={test.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                  >
-                    <div className="glass-card rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-primary/50 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
-                            {test.duration} MINS
-                          </span>
-                          <span className="px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-bold uppercase tracking-wider">
-                            180 QUESTIONS
-                          </span>
+                {tests.map((test, idx) => {
+                  const testAttempts = attempts.filter(a => a.testId === test.id);
+                  const lastAttempt = testAttempts.length > 0 
+                    ? testAttempts.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds)[0]
+                    : null;
+
+                  return (
+                    <motion.div
+                      key={test.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <div className="glass-card rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-primary/50 transition-colors">
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+                              {test.duration} MINS
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-bold uppercase tracking-wider">
+                              180 QUESTIONS
+                            </span>
+                          </div>
+                          <h3 className="text-xl font-bold mb-1">{test.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Physics, Chemistry, Biology • +4/-1 Marking
+                          </p>
                         </div>
-                        <h3 className="text-xl font-bold mb-1">{test.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Physics, Chemistry, Biology • +4/-1 Marking
-                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          {lastAttempt ? (
+                            <>
+                              <Link href={`/result/${lastAttempt.id}`}>
+                                <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl font-semibold border-primary text-primary hover:bg-primary/5">
+                                  <BarChart2 className="mr-2 w-4 h-4" /> View Result
+                                </Button>
+                              </Link>
+                              <Link href={`/test/${test.id}`}>
+                                <Button size="lg" className="w-full sm:w-auto rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30">
+                                  <RotateCcw className="mr-2 w-4 h-4" /> Reattempt Test
+                                </Button>
+                              </Link>
+                            </>
+                          ) : (
+                            <Link href={`/test/${test.id}`}>
+                              <Button size="lg" className="w-full sm:w-auto rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30">
+                                Attempt Test <ChevronRight className="ml-2 w-4 h-4" />
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                      
-                      <Link href={`/test/${test.id}`}>
-                        <Button size="lg" className="w-full sm:w-auto rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30">
-                          Attempt Test <ChevronRight className="ml-2 w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </main>

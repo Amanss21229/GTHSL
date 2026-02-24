@@ -8,9 +8,11 @@ import {
   getDocs,
   doc,
   getDoc,
-  Timestamp 
+  Timestamp,
+  onSnapshot 
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export interface Attempt {
   id: string;
@@ -30,21 +32,27 @@ export function useAttempts() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setAttempts([]);
+        setLoading(false);
+        return;
+      }
 
-    async function fetchAttempts() {
-      const q = query(collection(db, 'attempts'), where('userId', '==', user?.uid));
-      const snapshot = await getDocs(q);
-      const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Attempt));
-      setAttempts(results);
-      setLoading(false);
-    }
+      const q = query(collection(db, 'attempts'), where('userId', '==', user.uid));
+      const unsubscribeSnap = onSnapshot(q, (snapshot) => {
+        const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Attempt));
+        setAttempts(results);
+        setLoading(false);
+      }, (err) => {
+        console.error(err);
+        setLoading(false);
+      });
 
-    fetchAttempts();
+      return () => unsubscribeSnap();
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
   return { attempts, loading };
