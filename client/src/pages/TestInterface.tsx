@@ -25,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubmitTest } from "@/hooks/use-attempts";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function TestInterface() {
