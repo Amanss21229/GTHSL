@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { useAdminTests, Question } from "@/hooks/use-tests";
-import { Plus, Trash2, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle2, ShieldCheck, FileText, Upload, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -23,11 +23,18 @@ export default function Admin() {
   const { toast } = useToast();
   const { createTest } = useAdminTests();
   const [loading, setLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState<'tests' | 'users'>('tests');
+  const [uploadMode, setUploadMode] = useState<'manual' | 'ai'>('manual');
 
   const { data: allUsers, isLoading: loadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
+
+  const [questionPdf, setQuestionPdf] = useState<File | null>(null);
+  const [answerPdf, setAnswerPdf] = useState<File | null>(null);
+  
+  // ... rest of state ...
 
   const verifyMutation = useMutation({
     mutationFn: async ({ uid, isVerified }: { uid: string, isVerified: boolean }) => {
@@ -55,6 +62,9 @@ export default function Admin() {
     { questionNumber: 1, imageUrl: '', correctOption: 1 }
   ]);
 
+  const [questionPdf, setQuestionPdf] = useState<File | null>(null);
+  const [answerPdf, setAnswerPdf] = useState<File | null>(null);
+  
   const ADMIN_PASS1 = import.meta.env.VITE_ADMIN_PASS1;
   const ADMIN_PASS2 = import.meta.env.VITE_ADMIN_PASS2;
 
@@ -176,8 +186,50 @@ export default function Admin() {
       });
       setTitle('');
       setQuestions([{ questionNumber: 1, imageUrl: '', correctOption: 1 }]);
+      setQuestionPdf(null);
+      setAnswerPdf(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAiExtract = async () => {
+    if (!questionPdf || !answerPdf) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please upload both question paper and answer key PDFs"
+      });
+      return;
+    }
+
+    setExtracting(true);
+    try {
+      const formData = new FormData();
+      formData.append('questionPaper', questionPdf);
+      formData.append('answerKey', answerPdf);
+
+      const res = await fetch('/api/admin/extract-questions', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Extraction failed");
+
+      const data = await res.json();
+      setQuestions(data.questions);
+      toast({
+        title: "AI Extraction Successful",
+        description: `Extracted ${data.questions.length} questions.`
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Extraction Failed",
+        description: err.message
+      });
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -214,6 +266,55 @@ export default function Admin() {
         
         {activeTab === 'tests' ? (
           <div className="glass-card p-8 rounded-2xl space-y-8">
+            <div className="flex gap-4 p-1 bg-muted rounded-lg w-fit">
+              <Button 
+                variant={uploadMode === 'manual' ? 'secondary' : 'ghost'} 
+                size="sm"
+                onClick={() => setUploadMode('manual')}
+              >
+                Manual Entry
+              </Button>
+              <Button 
+                variant={uploadMode === 'ai' ? 'secondary' : 'ghost'} 
+                size="sm"
+                onClick={() => setUploadMode('ai')}
+              >
+                <Sparkles className="w-4 h-4 mr-2 text-primary" />
+                AI PDF Import
+              </Button>
+            </div>
+
+            {uploadMode === 'ai' && (
+              <div className="grid md:grid-cols-2 gap-6 p-6 border-2 border-dashed rounded-2xl bg-primary/5">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> Question Paper PDF
+                  </Label>
+                  <Input 
+                    type="file" 
+                    accept=".pdf" 
+                    onChange={e => setQuestionPdf(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> Answer Key PDF
+                  </Label>
+                  <Input 
+                    type="file" 
+                    accept=".pdf" 
+                    onChange={e => setAnswerPdf(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <Button 
+                  className="md:col-span-2" 
+                  onClick={handleAiExtract}
+                  disabled={extracting || !questionPdf || !answerPdf}
+                >
+                  {extracting ? "Analyzing PDFs with AI..." : "Start AI Extraction"}
+                </Button>
+              </div>
+            )}
             {/* ... rest of test management code ... */}
           
           <div className="grid md:grid-cols-2 gap-6">

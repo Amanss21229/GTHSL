@@ -5,6 +5,14 @@ import { api } from "@shared/routes";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdf = require("pdf-parse");
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || "dummy",
+});
 
 // Ensure uploads directory exists
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -39,6 +47,54 @@ export async function registerRoutes(
     }
     const url = `/uploads/${req.file.filename}`;
     res.json({ url });
+  });
+
+  app.post("/api/admin/extract-questions", upload.fields([
+    { name: 'questionPaper', maxCount: 1 },
+    { name: 'answerKey', maxCount: 1 }
+  ]), async (req, res) => {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (!files.questionPaper || !files.answerKey) {
+      return res.status(400).json({ message: "Both question paper and answer key PDFs are required" });
+    }
+
+    try {
+      const questionData = await pdf(fs.readFileSync(files.questionPaper[0].path));
+      const answerData = await pdf(fs.readFileSync(files.answerKey[0].path));
+
+      const prompt = `
+        I have two texts extracted from PDFs. One is a question paper and the other is an answer key.
+        Please extract the questions and their corresponding correct options (1-4).
+        
+        Question Paper Text:
+        ${questionData.text.substring(0, 10000)}
+        
+        Answer Key Text:
+        ${answerData.text.substring(0, 5000)}
+        
+        Return a JSON array of objects with the following structure:
+        [
+          { "questionNumber": 1, "correctOption": 2, "imageUrl": "" },
+          ...
+        ]
+        Only return the JSON array.
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      const content = response.choices[0].message.content;
+      const result = JSON.parse(content || "{}");
+      const questions = Array.isArray(result) ? result : result.questions || [];
+
+      res.json({ questions });
+    } catch (error: any) {
+      console.error("Extraction failed:", error);
+      res.status(500).json({ message: "Failed to extract questions: " + error.message });
+    }
   });
 
   app.get(api.tests.list.path, async (req, res) => {
