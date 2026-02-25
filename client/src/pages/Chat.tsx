@@ -18,12 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Image as ImageIcon, Trash2, Smile, CheckCircle2 } from "lucide-react";
+import { Send, Image as ImageIcon, Trash2, Smile, CheckCircle2, Shield, Info, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { Navbar } from "@/components/Navbar";
 
 export default function Chat() {
   const { user } = useAuth();
@@ -43,10 +45,13 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    // Using a general collection for global discussion
     const q = query(collection(db, "global_chat"), orderBy("createdAt", "asc"), limit(100));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const msgs = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        createdAt: (doc.data() as any).createdAt?.toDate() || new Date()
+      }));
       setMessages(msgs);
     });
     return () => unsubscribe();
@@ -56,7 +61,10 @@ export default function Chat() {
     if (scrollRef.current) {
       const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'smooth'
+        });
       }
     }
   }, [messages]);
@@ -84,7 +92,6 @@ export default function Chat() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Safety check: Only allow images
     if (!file.type.startsWith('image/')) {
       toast({ title: "Error", description: "Only image files are allowed", variant: "destructive" });
       return;
@@ -132,145 +139,224 @@ export default function Chat() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Card className="w-full max-w-md mx-4">
-          <CardHeader>
-            <CardTitle className="text-center text-2xl">Discussion Group</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">Please sign in to join the discussion.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
+        <Navbar />
+        <div className="flex items-center justify-center p-4 mt-20">
+          <Card className="w-full max-w-md glass-card rounded-3xl border-primary/20 premium-shadow">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-display font-bold">Secure Discussion</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">Join our global community of NEET & JEE aspirants. Share doubts, resources, and grow together.</p>
+              <Button onClick={() => window.location.reload()} className="w-full rounded-full bg-primary hover:bg-primary/90 text-white">
+                Sign In to Join
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 h-[calc(100vh-5rem)] flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden glass-card rounded-3xl border-primary/20 shadow-xl">
-        <CardHeader className="border-b bg-background/50 backdrop-blur-sm p-4">
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            Live Discussion
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-          <ScrollArea ref={scrollRef} className="flex-1 p-4">
-            <div className="space-y-4">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.userId === user?.uid ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] md:max-w-[70%] flex gap-3 ${msg.userId === user?.uid ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <Avatar className="w-8 h-8 shrink-0 mt-1 ring-2 ring-primary/10">
-                      <AvatarImage src={msg.userPhoto} />
-                      <AvatarFallback>{msg.userName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className={`flex flex-col ${msg.userId === user?.uid ? 'items-end' : 'items-start'}`}>
-                      <div className="flex items-center gap-1 mb-1 px-1">
-                        <span className="text-[10px] font-medium text-muted-foreground">{msg.userName}</span>
-                        {(msg.isVerified || isUserVerified(msg.userId)) && (
-                          <CheckCircle2 className="h-3 w-3 text-blue-500 fill-blue-500/10" />
-                        )}
-                      </div>
-                      <div className={`p-3 rounded-2xl relative group shadow-sm transition-all duration-200 ${
-                        msg.userId === user?.uid 
-                          ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                          : 'bg-muted/80 backdrop-blur-sm rounded-tl-none'
-                      }`}>
-                        {msg.imageUrl ? (
-                          <div className="space-y-2">
-                            <img 
-                              src={msg.imageUrl} 
-                              alt="upload" 
-                              className="max-w-full rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity" 
-                              onClick={() => window.open(msg.imageUrl, '_blank')}
-                            />
-                          </div>
-                        ) : (
-                          <p className="text-sm md:text-base whitespace-pre-wrap break-words">{msg.content}</p>
-                        )}
-                        {msg.userId === user?.uid && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => deleteMessage(msg.id)}
-                            data-testid={`delete-msg-${msg.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+    <div className="flex flex-col h-screen bg-gradient-to-b from-background to-secondary/30 dark:from-background dark:to-black/20">
+      <Navbar />
+      
+      <main className="flex-1 container mx-auto p-2 md:p-6 overflow-hidden flex flex-col max-w-6xl">
+        <Card className="flex-1 flex flex-col overflow-hidden glass-card rounded-[2rem] border-primary/10 premium-shadow relative">
+          {/* Subtle Background Decoration */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -ml-32 -mb-32 pointer-events-none" />
+
+          {/* Chat Header */}
+          <header className="px-6 py-4 border-b bg-background/40 backdrop-blur-md flex items-center justify-between z-10">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  N
                 </div>
-              ))}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background ring-1 ring-green-500/20" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-lg md:text-xl leading-tight tracking-tight">
+                  NEET JEE GLOBAL <span className="text-primary/60 font-medium ml-1">Live</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Community Chat</span>
+                </div>
+              </div>
             </div>
-          </ScrollArea>
-
-          <div className="p-4 border-t bg-background/50 backdrop-blur-md">
-            <form onSubmit={sendMessage} className="flex gap-2 items-center max-w-4xl mx-auto">
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="shrink-0 rounded-full hover:bg-primary/10 transition-colors"
-                disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
-                data-testid="button-upload-image"
-              >
-                <ImageIcon className="h-5 w-5" />
+            
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full md:flex hidden hover:bg-primary/5">
+                <Info className="h-5 w-5 text-muted-foreground" />
               </Button>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
+                <MoreVertical className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </div>
+          </header>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon" 
-                    className="shrink-0 rounded-full hover:bg-primary/10 transition-colors"
-                    data-testid="button-emoji"
+          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-background/20 relative">
+            <ScrollArea ref={scrollRef} className="flex-1 h-full px-4 md:px-8">
+              <div className="space-y-6 py-6 max-w-4xl mx-auto">
+                <AnimatePresence mode="popLayout">
+                  {messages.map((msg, index) => {
+                    const isOwn = msg.userId === user?.uid;
+                    const showName = index === 0 || messages[index-1].userId !== msg.userId;
+                    
+                    return (
+                      <motion.div 
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                      >
+                        <div className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                          {!isOwn && (
+                            <div className="flex flex-col justify-end pb-1">
+                              <Avatar className="w-8 h-8 md:w-9 md:h-9 border-2 border-background shadow-md">
+                                <AvatarImage src={msg.userPhoto} />
+                                <AvatarFallback className="bg-primary/10 text-primary font-bold">{msg.userName[0]}</AvatarFallback>
+                              </Avatar>
+                            </div>
+                          )}
+                          
+                          <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                            {showName && (
+                              <div className="flex items-center gap-1.5 mb-1.5 px-2">
+                                <span className="text-[11px] font-semibold text-muted-foreground/80 tracking-wide uppercase">
+                                  {isOwn ? 'You' : msg.userName}
+                                </span>
+                                {(msg.isVerified || isUserVerified(msg.userId)) && (
+                                  <CheckCircle2 className="h-3 w-3 text-blue-500 fill-blue-500/10" />
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all duration-300 ${
+                              isOwn 
+                                ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-[4px] premium-shadow hover:shadow-primary/20' 
+                                : 'bg-background/80 dark:bg-black/40 backdrop-blur-md border border-primary/5 rounded-tl-[4px] hover:border-primary/20'
+                            }`}>
+                              {msg.imageUrl ? (
+                                <div className="space-y-2">
+                                  <img 
+                                    src={msg.imageUrl} 
+                                    alt="upload" 
+                                    className="max-w-full rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity border border-white/10" 
+                                    onClick={() => window.open(msg.imageUrl, '_blank')}
+                                  />
+                                </div>
+                              ) : (
+                                <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                              )}
+                              
+                              <div className={`flex items-center gap-2 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                <span className={`text-[9px] opacity-60 font-medium ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                  {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </span>
+                              </div>
+
+                              {isOwn && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all bg-background/50 hover:bg-destructive/10 hover:text-destructive rounded-full"
+                                  onClick={() => deleteMessage(msg.id)}
+                                  data-testid={`delete-msg-${msg.id}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </ScrollArea>
+
+            {/* Input Section */}
+            <div className="p-4 md:p-6 border-t bg-background/60 backdrop-blur-xl z-10">
+              <form onSubmit={sendMessage} className="flex gap-2 md:gap-3 items-center max-w-4xl mx-auto bg-background/80 dark:bg-black/40 p-1.5 md:p-2 rounded-3xl border border-primary/10 shadow-lg focus-within:ring-2 ring-primary/20 transition-all">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+                
+                <div className="flex gap-1 md:gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all active:scale-90"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="button-upload-image"
                   >
-                    <Smile className="h-5 w-5" />
+                    <ImageIcon className="h-5 w-5 md:h-6 md:w-6" />
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 border-none shadow-2xl" side="top" align="start">
-                  <Picker 
-                    data={data} 
-                    onEmojiSelect={addEmoji} 
-                    theme="light" 
-                    previewPosition="none"
-                    skinTonePosition="none"
-                  />
-                </PopoverContent>
-              </Popover>
 
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Discuss your doubts here..."
-                className="flex-1 rounded-full bg-background border-primary/20 focus:ring-primary/30"
-                data-testid="input-chat-message"
-              />
-              <Button 
-                type="submit" 
-                disabled={!newMessage.trim() || uploading} 
-                className="shrink-0 rounded-full px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-                data-testid="button-send-chat"
-              >
-                <Send className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Send</span>
-              </Button>
-            </form>
-          </div>
-        </CardContent>
-      </Card>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="shrink-0 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all active:scale-90"
+                        data-testid="button-emoji"
+                      >
+                        <Smile className="h-5 w-5 md:h-6 md:w-6" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 border-none shadow-2xl rounded-2xl overflow-hidden" side="top" align="start">
+                      <Picker 
+                        data={data} 
+                        onEmojiSelect={addEmoji} 
+                        theme="light" 
+                        previewPosition="none"
+                        skinTonePosition="none"
+                        perLine={8}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-base h-10 md:h-12"
+                  data-testid="input-chat-message"
+                />
+
+                <Button 
+                  type="submit" 
+                  disabled={!newMessage.trim() || uploading} 
+                  className="shrink-0 rounded-2xl h-10 md:h-12 px-4 md:px-6 bg-gradient-to-br from-primary to-primary/80 hover:shadow-primary/30 shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-white"
+                  data-testid="button-send-chat"
+                >
+                  <Send className="h-5 w-5 md:mr-2" />
+                  <span className="hidden md:inline font-bold">Send</span>
+                </Button>
+              </form>
+              <p className="text-[10px] text-center mt-3 text-muted-foreground font-medium uppercase tracking-[0.2em] opacity-40">
+                End-to-End Community Support
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }
