@@ -67,17 +67,19 @@ export async function registerRoutes(
         Please extract the questions and their corresponding correct options (1-4).
         
         Question Paper Text:
-        ${questionData.text.substring(0, 10000)}
+        ${questionData.text.substring(0, 15000)}
         
         Answer Key Text:
-        ${answerData.text.substring(0, 5000)}
+        ${answerData.text.substring(0, 7000)}
         
-        Return a JSON array of objects with the following structure:
-        [
-          { "questionNumber": 1, "correctOption": 2, "imageUrl": "" },
-          ...
-        ]
-        Only return the JSON array.
+        Return a JSON object with a "questions" key containing an array of objects:
+        {
+          "questions": [
+            { "questionNumber": 1, "correctOption": 2, "imageUrl": "" },
+            ...
+          ]
+        }
+        Only return the JSON object.
       `;
 
       const response = await openai.chat.completions.create({
@@ -87,8 +89,9 @@ export async function registerRoutes(
       });
 
       const content = response.choices[0].message.content;
+      console.log("AI Response:", content);
       const result = JSON.parse(content || "{}");
-      const questions = Array.isArray(result) ? result : result.questions || [];
+      const questions = result.questions || (Array.isArray(result) ? result : []);
 
       res.json({ questions });
     } catch (error: any) {
