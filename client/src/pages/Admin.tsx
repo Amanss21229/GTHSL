@@ -31,11 +31,6 @@ export default function Admin() {
     queryKey: ["/api/users"],
   });
 
-  const [questionPdf, setQuestionPdf] = useState<File | null>(null);
-  const [answerPdf, setAnswerPdf] = useState<File | null>(null);
-  
-  // ... rest of state ...
-
   const verifyMutation = useMutation({
     mutationFn: async ({ uid, isVerified }: { uid: string, isVerified: boolean }) => {
       await apiRequest("PATCH", `/api/users/${uid}/verify`, { isVerified });
