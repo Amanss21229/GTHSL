@@ -10,6 +10,7 @@ import Section from "@/pages/Section";
 import TestInterface from "@/pages/TestInterface";
 import Result from "@/pages/Result";
 import Admin from "@/pages/Admin";
+import Chat from "@/pages/Chat";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/test/:id" component={TestInterface} />
       <Route path="/result/:id" component={Result} />
       <Route path="/admin" component={Admin} />
+      <Route path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>
   );

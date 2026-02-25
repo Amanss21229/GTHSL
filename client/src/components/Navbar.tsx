@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, User as UserIcon, LogOut, Award } from "lucide-react";
+import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function Navbar() {
@@ -43,6 +43,13 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          <Link href="/chat">
+            <Button variant="ghost" size="sm" className="gap-2 hidden md:flex">
+              <MessageSquare className="h-4 w-4" />
+              Discussion
+            </Button>
+          </Link>
+
           <Button 
             variant="ghost" 
             size="icon" 
