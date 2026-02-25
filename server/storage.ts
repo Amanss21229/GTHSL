@@ -9,6 +9,7 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   getVerifiedUserUids(): Promise<string[]>;
   updateUserVerification(uid: string, isVerified: boolean): Promise<User>;
+  getOrCreateUser(user: any): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -36,6 +37,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.firebaseUid, uid))
       .returning();
     return updated;
+  }
+
+  async getOrCreateUser(userData: any): Promise<User> {
+    const [existing] = await db.select().from(users).where(eq(users.firebaseUid, userData.firebaseUid));
+    if (existing) return existing;
+    
+    const [newUser] = await db.insert(users).values(userData).returning();
+    return newUser;
   }
 }
 

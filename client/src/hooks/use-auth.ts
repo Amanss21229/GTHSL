@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,8 +17,21 @@ export function useAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (u) {
+        // Sync with PostgreSQL
+        try {
+          await apiRequest("POST", "/api/users", {
+            firebaseUid: u.uid,
+            name: u.displayName || "Anonymous",
+            email: u.email || "",
+            role: "student"
+          });
+        } catch (err) {
+          console.error("Failed to sync user with PostgreSQL", err);
+        }
+      }
       setLoading(false);
     });
     return () => unsubscribe();

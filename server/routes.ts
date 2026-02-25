@@ -51,6 +51,11 @@ export async function registerRoutes(
     res.json(allUsers);
   });
 
+  app.post("/api/users", async (req, res) => {
+    const user = await storage.getOrCreateUser(req.body);
+    res.json(user);
+  });
+
   app.get("/api/users/verified", async (req, res) => {
     const verifiedUsers = await storage.getVerifiedUserUids();
     res.json(verifiedUsers);
