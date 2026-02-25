@@ -62,28 +62,17 @@ export async function registerRoutes(
       const questionData = await pdf(fs.readFileSync(files.questionPaper[0].path));
       const answerData = await pdf(fs.readFileSync(files.answerKey[0].path));
 
-      const prompt = `
-        I have two texts extracted from PDFs. One is a question paper and the other is an answer key.
-        Please extract the questions and their corresponding correct options (1-4).
-        
-        Question Paper Text:
-        ${questionData.text.substring(0, 15000)}
-        
-        Answer Key Text:
-        ${answerData.text.substring(0, 7000)}
-        
-        Return a JSON object with a "questions" key containing an array of objects:
-        {
-          "questions": [
-            { "questionNumber": 1, "correctOption": 2, "imageUrl": "" },
-            ...
-          ]
-        }
-        Only return the JSON object.
-      `;
+      // Optimize: Only take what's likely needed for the prompt to stay within token limits and be faster
+      const qText = questionData.text.substring(0, 12000);
+      const aText = answerData.text.substring(0, 5000);
+
+      const prompt = `Extract questions and correct options (1-4) from these texts.
+      Question Paper: ${qText}
+      Answer Key: ${aText}
+      Return JSON: {"questions": [{"questionNumber": 1, "correctOption": 2, "imageUrl": ""}]}`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini", // Faster and cheaper
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" }
       });
@@ -96,7 +85,7 @@ export async function registerRoutes(
       res.json({ questions });
     } catch (error: any) {
       console.error("Extraction failed:", error);
-      res.status(500).json({ message: "Failed to extract questions: " + error.message });
+      res.status(500).json({ message: error.message });
     }
   });
 

@@ -204,14 +204,27 @@ export default function Admin() {
       formData.append('questionPaper', questionPdf);
       formData.append('answerKey', answerPdf);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+
       const res = await fetch('/api/admin/extract-questions', {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
 
-      if (!res.ok) throw new Error("Extraction failed");
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Extraction failed" }));
+        throw new Error(errorData.message || "Extraction failed");
+      }
 
       const data = await res.json();
+      if (!data.questions || data.questions.length === 0) {
+        throw new Error("No questions could be extracted. Please check the PDF quality.");
+      }
+      
       setQuestions(data.questions);
       toast({
         title: "AI Extraction Successful",
@@ -221,7 +234,7 @@ export default function Admin() {
       toast({
         variant: "destructive",
         title: "Extraction Failed",
-        description: err.message
+        description: err.name === 'AbortError' ? "Request timed out. Try smaller PDFs." : err.message
       });
     } finally {
       setExtracting(false);
