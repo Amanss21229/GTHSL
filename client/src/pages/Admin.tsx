@@ -11,15 +11,34 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { useAdminTests, Question } from "@/hooks/use-tests";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { User } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { createTest } = useAdminTests();
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tests' | 'users'>('tests');
+
+  const { data: allUsers, isLoading: loadingUsers } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: async ({ uid, isVerified }: { uid: string, isVerified: boolean }) => {
+      await apiRequest("PATCH", `/api/users/${uid}/verify`, { isVerified });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/verified"] });
+      toast({ title: "Success", description: "User verification status updated" });
+    }
+  });
   
   // Auth State
   const [step, setStep] = useState<'pass1' | 'checking' | 'dashboard_preview' | 'pass2' | 'authorized'>('pass1');
@@ -169,6 +188,22 @@ export default function Admin() {
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="flex gap-2">
+            <Button 
+              variant={activeTab === 'tests' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setActiveTab('tests')}
+            >
+              Manage Tests
+            </Button>
+            <Button 
+              variant={activeTab === 'users' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setActiveTab('users')}
+            >
+              Manage Users
+            </Button>
+          </div>
           {step === 'dashboard_preview' && (
             <div className="flex items-center gap-2 text-amber-500 animate-pulse bg-amber-500/10 px-3 py-1 rounded-full text-sm font-medium">
               <AlertCircle className="w-4 h-4" />
@@ -177,7 +212,9 @@ export default function Admin() {
           )}
         </div>
         
-        <div className="glass-card p-8 rounded-2xl space-y-8">
+        {activeTab === 'tests' ? (
+          <div className="glass-card p-8 rounded-2xl space-y-8">
+            {/* ... rest of test management code ... */}
           
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -332,8 +369,45 @@ export default function Admin() {
           >
             {loading ? "Creating Test..." : step === 'authorized' ? "Publish Test Series" : "Unlock to Publish"}
           </Button>
-
         </div>
+        ) : (
+          <div className="glass-card p-8 rounded-2xl space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <ShieldCheck className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-bold">User Verification</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {loadingUsers ? (
+                <div className="text-center py-10 text-muted-foreground">Loading users...</div>
+              ) : allUsers?.map((u) => (
+                <div key={u.id} className="flex items-center justify-between p-4 border rounded-xl bg-card/50">
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col">
+                      <span className="font-bold flex items-center gap-1">
+                        {u.name}
+                        {u.isVerified && <CheckCircle2 className="w-4 h-4 text-blue-500" />}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{u.email}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant={u.isVerified ? "destructive" : "default"}
+                    size="sm"
+                    className="rounded-full"
+                    disabled={verifyMutation.isPending}
+                    onClick={() => verifyMutation.mutate({ uid: u.firebaseUid, isVerified: !u.isVerified })}
+                  >
+                    {u.isVerified ? "Remove Verification" : "Verify User"}
+                  </Button>
+                </div>
+              ))}
+              {!loadingUsers && allUsers?.length === 0 && (
+                <div className="text-center py-10 text-muted-foreground">No users found in database.</div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

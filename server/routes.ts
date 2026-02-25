@@ -46,5 +46,21 @@ export async function registerRoutes(
     res.json(allTests);
   });
 
+  app.get("/api/users", async (req, res) => {
+    const allUsers = await storage.getUsers();
+    res.json(allUsers);
+  });
+
+  app.get("/api/users/verified", async (req, res) => {
+    const verifiedUsers = await storage.getVerifiedUserUids();
+    res.json(verifiedUsers);
+  });
+
+  app.patch("/api/users/:uid/verify", async (req, res) => {
+    const { isVerified } = req.body;
+    const updatedUser = await storage.updateUserVerification(req.params.uid, isVerified);
+    res.json(updatedUser);
+  });
+
   return httpServer;
 }

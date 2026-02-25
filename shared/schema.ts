@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   role: text("role").default("student"),
+  isVerified: boolean("is_verified").default(false),
 });
 
 export const tests = pgTable("tests", {

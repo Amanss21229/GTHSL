@@ -18,11 +18,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Image as ImageIcon, Trash2, Smile } from "lucide-react";
+import { Send, Image as ImageIcon, Trash2, Smile, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Chat() {
   const { user } = useAuth();
@@ -32,6 +33,14 @@ export default function Chat() {
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: verifiedUsers } = useQuery<string[]>({
+    queryKey: ["/api/users/verified"],
+  });
+
+  const isUserVerified = (uid: string) => {
+    return verifiedUsers?.includes(uid);
+  };
 
   useEffect(() => {
     // Using a general collection for global discussion
@@ -63,6 +72,7 @@ export default function Chat() {
         userPhoto: user.photoURL,
         content: newMessage,
         createdAt: serverTimestamp(),
+        isVerified: isUserVerified(user.uid),
       });
       setNewMessage("");
     } catch (error) {
@@ -98,6 +108,7 @@ export default function Chat() {
         content: "[Image]",
         imageUrl: url,
         createdAt: serverTimestamp(),
+        isVerified: isUserVerified(user.uid),
       });
     } catch (error) {
       toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
@@ -154,7 +165,12 @@ export default function Chat() {
                       <AvatarFallback>{msg.userName[0]}</AvatarFallback>
                     </Avatar>
                     <div className={`flex flex-col ${msg.userId === user?.uid ? 'items-end' : 'items-start'}`}>
-                      <span className="text-[10px] font-medium text-muted-foreground mb-1 px-1">{msg.userName}</span>
+                      <div className="flex items-center gap-1 mb-1 px-1">
+                        <span className="text-[10px] font-medium text-muted-foreground">{msg.userName}</span>
+                        {(msg.isVerified || isUserVerified(msg.userId)) && (
+                          <CheckCircle2 className="h-3 w-3 text-blue-500 fill-blue-500/10" />
+                        )}
+                      </div>
                       <div className={`p-3 rounded-2xl relative group shadow-sm transition-all duration-200 ${
                         msg.userId === user?.uid 
                           ? 'bg-primary text-primary-foreground rounded-tr-none' 
