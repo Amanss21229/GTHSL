@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
@@ -38,6 +38,15 @@ export function useAuth() {
   }, []);
 
   const signIn = async () => {
+    if (!isFirebaseConfigured) {
+      toast({
+        variant: "destructive",
+        title: "Configuration Missing",
+        description: "Firebase credentials are not set in environment variables. Please check the README or replit.md for setup instructions.",
+      });
+      return;
+    }
+
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -60,12 +69,20 @@ export function useAuth() {
         title: "Welcome back!",
         description: `Signed in as ${user.displayName}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      let errorMessage = "Failed to sign in";
+      
+      if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = "Google Sign-in is not enabled in your Firebase Console.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "This domain is not authorized in your Firebase Console.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to sign in",
+        title: "Sign-in Blocked",
+        description: errorMessage,
       });
     }
   };
