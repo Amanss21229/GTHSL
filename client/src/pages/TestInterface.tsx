@@ -64,6 +64,8 @@ export default function TestInterface() {
     } catch (e) {
       console.error(e);
       setIsSubmitting(false);
+      // Fallback redirect even if Firestore submission fails to show result if possible or at least exit
+      setLocation("/");
     }
   };
 

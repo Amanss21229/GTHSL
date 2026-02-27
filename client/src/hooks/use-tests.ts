@@ -126,10 +126,6 @@ export function useAdminTests() {
         await Promise.all(promises);
       }
       
-      toast({
-        title: "Success",
-        description: "Test created successfully",
-      });
       return testRef.id;
     } catch (error) {
       console.error(error);
@@ -142,5 +138,31 @@ export function useAdminTests() {
     }
   };
 
-  return { createTest };
+  const deleteTest = async (testId: string) => {
+    try {
+      const { deleteDoc, doc: firestoreDoc } = await import('firebase/firestore');
+      await deleteDoc(firestoreDoc(db, 'tests', testId));
+      
+      // Also delete associated questions if any
+      const qQuery = query(collection(db, 'questions'), where('testId', '==', testId));
+      const qDocs = await getDocs(qQuery);
+      const deletePromises = qDocs.docs.map(d => deleteDoc(firestoreDoc(db, 'questions', d.id)));
+      await Promise.all(deletePromises);
+
+      toast({
+        title: "Success",
+        description: "Test deleted successfully",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete test",
+      });
+      throw error;
+    }
+  };
+
+  return { createTest, deleteTest };
 }

@@ -10,8 +10,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { useAdminTests, Question } from "@/hooks/use-tests";
-import { Plus, Trash2, AlertCircle, CheckCircle2, ShieldCheck, FileText, Upload, Sparkles } from "lucide-react";
+import { useAdminTests, useTests, Question } from "@/hooks/use-tests";
+import { Plus, Trash2, AlertCircle, CheckCircle2, ShieldCheck, FileText, Upload, Sparkles, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -21,11 +21,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { createTest } = useAdminTests();
+  const { createTest, deleteTest } = useAdminTests();
+  const { tests: allTests, loading: loadingTestsList } = useTests();
   const [loading, setLoading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tests' | 'users' | 'stats'>('tests');
-  const [uploadMode, setUploadMode] = useState<'manual' | 'ai'>('manual');
+  const [activeTab, setActiveTab] = useState<'tests' | 'users' | 'stats' | 'manage'>('tests');
 
   const { data: adminStats, isLoading: loadingStats } = useQuery<{
     totalUsers: number,
@@ -285,6 +284,13 @@ export default function Admin() {
               Manage Users
             </Button>
             <Button 
+              variant={activeTab === 'manage' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setActiveTab('manage')}
+            >
+              Manage Existing Tests
+            </Button>
+            <Button 
               variant={activeTab === 'stats' ? 'default' : 'outline'} 
               size="sm" 
               onClick={() => setActiveTab('stats')}
@@ -391,6 +397,43 @@ export default function Admin() {
                 </span>
               ) : "Publish Test Series Now"}
             </Button>
+          </div>
+        ) : activeTab === 'manage' ? (
+          <div className="glass-card p-8 rounded-2xl space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-bold">Existing Tests</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {loadingTestsList ? (
+                <div className="text-center py-10 text-muted-foreground">Loading tests...</div>
+              ) : allTests?.map((t) => (
+                <div key={t.id} className="flex items-center justify-between p-4 border rounded-xl bg-card/50">
+                  <div className="flex flex-col">
+                    <span className="font-bold">{t.title}</span>
+                    <span className="text-xs text-muted-foreground">{t.section} - {t.subsection}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{t.duration} Mins</span>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="rounded-full gap-2"
+                    onClick={async () => {
+                      if (confirm(`Are you sure you want to delete "${t.title}"?`)) {
+                        await deleteTest(t.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </Button>
+                </div>
+              ))}
+              {!loadingTestsList && allTests?.length === 0 && (
+                <div className="text-center py-10 text-muted-foreground">No tests found.</div>
+              )}
+            </div>
           </div>
         ) : activeTab === 'users' ? (
           <div className="glass-card p-8 rounded-2xl space-y-6">
