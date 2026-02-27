@@ -10,11 +10,18 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
+import { User as DbUser } from '@shared/schema';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  const { data: dbUser, refetch: refetchDbUser } = useQuery<DbUser>({
+    queryKey: ["/api/users", user?.uid],
+    enabled: !!user,
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -28,6 +35,7 @@ export function useAuth() {
             email: u.email || "",
             role: "student"
           });
+          refetchDbUser();
         } catch (err) {
           console.error("Failed to sync user with PostgreSQL", err);
         }
@@ -35,7 +43,7 @@ export function useAuth() {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [refetchDbUser]);
 
   const signIn = async () => {
     if (!isFirebaseConfigured) {
@@ -99,5 +107,5 @@ export function useAuth() {
     }
   };
 
-  return { user, loading, signIn, signOut };
+  return { user, dbUser, loading, signIn, signOut };
 }

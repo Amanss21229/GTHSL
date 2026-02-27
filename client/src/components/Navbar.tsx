@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 export function Navbar() {
-  const { user, signIn, signOut } = useAuth();
+  const { user, dbUser, signIn, signOut } = useAuth();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {

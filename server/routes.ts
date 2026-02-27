@@ -112,6 +112,12 @@ export async function registerRoutes(
     res.json(user);
   });
 
+  app.get("/api/users/:uid", async (req, res) => {
+    const user = await storage.getUserByFirebaseUid(req.params.uid);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  });
+
   app.get("/api/users/verified", async (req, res) => {
     const verifiedUsers = await storage.getVerifiedUserUids();
     res.json(verifiedUsers);
