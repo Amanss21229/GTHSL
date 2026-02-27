@@ -1,9 +1,10 @@
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { useTests } from "@/hooks/use-tests";
 import { useAttempts } from "@/hooks/use-attempts";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Clock, 
   ChevronRight, 
@@ -13,9 +14,12 @@ import {
   Beaker, 
   PenTool,
   RotateCcw,
-  BarChart2
+  BarChart2,
+  Lock,
+  ShieldCheck
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 const SUBSECTIONS = [
   { id: 'pyq', title: 'Year Wise PYQs', icon: Clock, color: 'text-orange-500', bg: 'bg-orange-500/10' },
@@ -27,19 +31,75 @@ const SUBSECTIONS = [
 
 export default function Section() {
   const [, params] = useRoute("/section/:type");
+  const [, setLocation] = useLocation();
+  const { user, signIn } = useAuth();
   const type = params?.type || "NEET";
   const [activeSubsection, setActiveSubsection] = useState(SUBSECTIONS[0].title);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
   
   const { tests, loading: loadingTests } = useTests(type, activeSubsection);
   const { attempts, loading: loadingAttempts } = useAttempts();
 
-  const loading = loadingTests || loadingAttempts;
+  useEffect(() => {
+    async function checkVerification() {
+      if (!user) {
+        setIsVerified(false);
+        return;
+      }
+      try {
+        const res = await apiRequest("GET", "/api/users");
+        const users = await res.json();
+        const currentUser = users.find((u: any) => u.firebaseUid === user.uid);
+        setIsVerified(currentUser?.isVerified || false);
+      } catch (err) {
+        console.error("Failed to check verification", err);
+        setIsVerified(false);
+      }
+    }
+    checkVerification();
+  }, [user]);
+
+  const loading = loadingTests || loadingAttempts || isVerified === null;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="max-w-md mx-auto glass-card p-10 rounded-[2.5rem] border-primary/20">
+            <Lock className="w-16 h-16 text-primary mx-auto mb-6" />
+            <h2 className="text-3xl font-display font-bold mb-4">Login Required</h2>
+            <p className="text-muted-foreground mb-8 text-lg">
+              Please sign in to access the {type} test series and track your progress.
+            </p>
+            <Button onClick={signIn} size="lg" className="w-full py-7 rounded-2xl text-lg font-bold">
+              Sign In with Google
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
+        {!isVerified && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col md:flex-row items-center gap-4 text-amber-500"
+          >
+            <ShieldCheck className="w-8 h-8 flex-shrink-0" />
+            <div className="flex-grow">
+              <h3 className="font-bold text-lg">Account Verification Pending</h3>
+              <p className="text-sm opacity-90 font-medium">Your account is currently in limited mode. Please contact admin to get verified for full access to premium features.</p>
+            </div>
+          </motion.div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* Sidebar Navigation */}
@@ -92,8 +152,10 @@ export default function Section() {
                 {tests.map((test, idx) => {
                   const testAttempts = attempts.filter(a => a.testId === test.id);
                   const lastAttempt = testAttempts.length > 0 
-                    ? testAttempts.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds)[0]
+                    ? [...testAttempts].sort((a, b) => (b.id || 0) - (a.id || 0))[0]
                     : null;
+
+                  const canAttempt = isVerified || idx === 0; // Only first test free for unverified
 
                   return (
                     <motion.div
@@ -102,7 +164,7 @@ export default function Section() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05 }}
                     >
-                      <div className="glass-card rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-primary/50 transition-colors">
+                      <div className={`glass-card rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-primary/50 transition-colors ${!canAttempt ? 'opacity-75' : ''}`}>
                         <div>
                           <div className="flex items-center gap-3 mb-2">
                             <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
@@ -111,6 +173,11 @@ export default function Section() {
                             <span className="px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-bold uppercase tracking-wider">
                               180 QUESTIONS
                             </span>
+                            {!canAttempt && (
+                              <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold uppercase tracking-wider">
+                                <Lock className="w-3 h-3" /> Premium
+                              </span>
+                            )}
                           </div>
                           <h3 className="text-xl font-bold mb-1">{test.title}</h3>
                           <p className="text-sm text-muted-foreground">
@@ -119,25 +186,31 @@ export default function Section() {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row gap-3">
-                          {lastAttempt ? (
-                            <>
-                              <Link href={`/result/${lastAttempt.id}`}>
-                                <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl font-semibold border-primary text-primary hover:bg-primary/5">
-                                  <BarChart2 className="mr-2 w-4 h-4" /> View Result
-                                </Button>
-                              </Link>
+                          {canAttempt ? (
+                            lastAttempt ? (
+                              <>
+                                <Link href={`/result/${lastAttempt.id}`}>
+                                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl font-semibold border-primary text-primary hover:bg-primary/5">
+                                    <BarChart2 className="mr-2 w-4 h-4" /> View Result
+                                  </Button>
+                                </Link>
+                                <Link href={`/test/${test.id}`}>
+                                  <Button size="lg" className="w-full sm:w-auto rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30">
+                                    <RotateCcw className="mr-2 w-4 h-4" /> Reattempt Test
+                                  </Button>
+                                </Link>
+                              </>
+                            ) : (
                               <Link href={`/test/${test.id}`}>
                                 <Button size="lg" className="w-full sm:w-auto rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30">
-                                  <RotateCcw className="mr-2 w-4 h-4" /> Reattempt Test
+                                  Attempt Test <ChevronRight className="ml-2 w-4 h-4" />
                                 </Button>
                               </Link>
-                            </>
+                            )
                           ) : (
-                            <Link href={`/test/${test.id}`}>
-                              <Button size="lg" className="w-full sm:w-auto rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30">
-                                Attempt Test <ChevronRight className="ml-2 w-4 h-4" />
-                              </Button>
-                            </Link>
+                            <Button disabled size="lg" className="w-full sm:w-auto rounded-xl font-semibold bg-muted text-muted-foreground border-dashed border-2">
+                              <Lock className="mr-2 w-4 h-4" /> Verified Only
+                            </Button>
                           )}
                         </div>
                       </div>

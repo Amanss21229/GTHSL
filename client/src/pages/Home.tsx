@@ -1,9 +1,13 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, GraduationCap, Microscope, Atom } from "lucide-react";
+import { ArrowRight, GraduationCap, Microscope, Atom, Lock } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
+  const { user, signIn } = useAuth();
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden selection:bg-primary/30">
       {/* Dynamic Background Elements */}
@@ -37,12 +41,12 @@ export default function Home() {
 
         <div className="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto mb-32">
           {/* NEET Card */}
-          <Link href="/section/NEET" className="group">
+          <div className="group">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="glass-card rounded-[2.5rem] p-10 h-full relative overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:border-primary/50 cursor-pointer group"
+              className="glass-card rounded-[2.5rem] p-10 h-full relative overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:border-primary/50 group"
             >
               <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
                 <Microscope size={280} />
@@ -69,20 +73,31 @@ export default function Home() {
                   ))}
                 </div>
 
-                <div className="flex items-center justify-center w-full py-4 rounded-2xl bg-primary text-white font-bold group-hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.5)] transition-all active:scale-[0.98]">
-                  Start Preparation <ArrowRight className="ml-2 w-5 h-5" />
-                </div>
+                {user ? (
+                  <Link href="/section/NEET">
+                    <Button className="w-full py-8 rounded-2xl bg-primary text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.5)] transition-all active:scale-[0.98]">
+                      Start Preparation <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button 
+                    onClick={signIn}
+                    className="w-full py-8 rounded-2xl bg-white/10 text-white font-bold text-lg hover:bg-white/20 transition-all active:scale-[0.98] border border-white/10"
+                  >
+                    <Lock className="mr-2 w-5 h-5" /> Login to Start
+                  </Button>
+                )}
               </div>
             </motion.div>
-          </Link>
+          </div>
 
           {/* JEE Card */}
-          <Link href="/section/JEE" className="group">
+          <div className="group">
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="glass-card rounded-[2.5rem] p-10 h-full relative overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:border-accent/50 cursor-pointer group"
+              className="glass-card rounded-[2.5rem] p-10 h-full relative overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:border-accent/50 group"
             >
               <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
                 <Atom size={280} />
@@ -109,12 +124,23 @@ export default function Home() {
                   ))}
                 </div>
 
-                <div className="flex items-center justify-center w-full py-4 rounded-2xl bg-accent text-white font-bold group-hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.5)] transition-all active:scale-[0.98]">
-                  Start Preparation <ArrowRight className="ml-2 w-5 h-5" />
-                </div>
+                {user ? (
+                  <Link href="/section/JEE">
+                    <Button className="w-full py-8 rounded-2xl bg-accent text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.5)] transition-all active:scale-[0.98]">
+                      Start Preparation <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button 
+                    onClick={signIn}
+                    className="w-full py-8 rounded-2xl bg-white/10 text-white font-bold text-lg hover:bg-white/20 transition-all active:scale-[0.98] border border-white/10"
+                  >
+                    <Lock className="mr-2 w-5 h-5" /> Login to Start
+                  </Button>
+                )}
               </div>
             </motion.div>
-          </Link>
+          </div>
         </div>
 
         {/* Features Grid */}
