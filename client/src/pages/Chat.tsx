@@ -48,16 +48,34 @@ export default function Chat() {
   const [onlineCount, setOnlineCount] = useState(1);
   const [chatBg, setChatBg] = useState<string | null>(localStorage.getItem("chat_bg"));
 
-  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setChatBg(base64);
-        localStorage.setItem("chat_bg", base64);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Error", description: "Only image files are allowed", variant: "destructive" });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Error", description: "File too large (max 5MB)", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `backgrounds/${user.uid}_${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      
+      setChatBg(url);
+      localStorage.setItem("chat_bg", url);
+      toast({ title: "Success", description: "Chat background updated" });
+    } catch (error) {
+      console.error("Background upload error:", error);
+      toast({ title: "Error", description: "Failed to upload background image", variant: "destructive" });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -281,8 +299,20 @@ export default function Chat() {
             
             <div className="flex items-center gap-2">
               <label className="cursor-pointer">
-                <input type="file" className="hidden" accept="image/*" onChange={handleBgUpload} />
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5" title="Set Chat Background">
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleBgUpload} 
+                  disabled={uploading}
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`rounded-full hover:bg-primary/5 ${uploading ? 'animate-pulse' : ''}`} 
+                  title="Set Chat Background"
+                  disabled={uploading}
+                >
                   <ImageIcon className="h-5 w-5 text-muted-foreground" />
                 </Button>
               </label>
