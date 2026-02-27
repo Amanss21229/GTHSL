@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   isVerified: boolean("is_verified").default(false),
   dailyMessageCount: integer("daily_message_count").default(0),
   lastMessageDate: text("last_message_date"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const tests = pgTable("tests", {

@@ -8,8 +8,9 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare, HeadphonesIcon, Send, MessageCircle } from "lucide-react";
+import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare, HeadphonesIcon, Send, MessageCircle, CheckCircle2, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 
 export function Navbar() {
   const { user, signIn, signOut } = useAuth();
@@ -101,8 +102,19 @@ export function Navbar() {
                     <AvatarFallback className="bg-primary/10 text-primary font-bold">{user.displayName?.[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col space-y-0.5 leading-none">
-                    <p className="font-bold text-foreground dark:text-white">{user.displayName}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-bold text-foreground dark:text-white">{user.displayName}</p>
+                      {dbUser?.isVerified && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-500 fill-blue-500/10" />
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    {dbUser?.createdAt && (
+                      <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground/70 font-medium">
+                        <Calendar className="h-2.5 w-2.5" />
+                        Joined {format(new Date(dbUser.createdAt), "MMM yyyy")}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-1">
