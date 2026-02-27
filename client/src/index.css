@@ -8,18 +8,18 @@
   --font-display: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
-  /* Premium Dark Theme - Deep Purple & Midnight Blue */
-  --background: 240 20% 4%;
-  --foreground: 0 0% 98%;
+  /* Premium Light Theme */
+  --background: 220 30% 98%;
+  --foreground: 222 47% 11%;
   
   --primary: 263 70% 50%;
   --primary-foreground: 210 40% 98%;
   
-  --secondary: 240 10% 10%;
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
   
-  --muted: 240 10% 10%;
-  --muted-foreground: 240 5% 65%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
   
   --accent: 280 80% 60%;
   --accent-foreground: 210 40% 98%;
@@ -27,14 +27,15 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 240 10% 15%;
-  --input: 240 10% 15%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
   --ring: 263 70% 50%;
   
   --radius: 1.25rem;
 }
 
 .dark {
+  /* Premium Dark Theme - Deep Purple & Midnight Blue */
   --background: 240 20% 4%;
   --foreground: 0 0% 98%;
   
@@ -69,13 +70,13 @@
   
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    @apply font-bold tracking-tight text-white;
+    @apply font-bold tracking-tight text-foreground dark:text-white;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
+    @apply bg-white/70 dark:bg-white/5 backdrop-blur-2xl border border-black/5 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
   
   .glass-button {
@@ -83,7 +84,7 @@
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-primary to-accent;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary via-primary to-accent dark:from-white dark:via-primary dark:to-accent;
   }
   
   .premium-shadow {

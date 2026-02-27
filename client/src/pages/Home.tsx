@@ -142,12 +142,14 @@ export default function Home() {
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto text-center mb-20">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 max-w-6xl mx-auto text-center mb-20">
           {[
             { label: "Active Users", value: "500+" },
             { label: "Tests Available", value: "1000+" },
             { label: "Questions Solved", value: "50k+" },
             { label: "Success Rate", value: "92%" },
+            { label: "Telegram Community", value: "20k+" },
+            { label: "Monthly Reach", value: "1 Lakh+" },
           ].map((stat, i) => (
             <motion.div
               key={i}
@@ -157,8 +159,8 @@ export default function Home() {
               transition={{ delay: 0.4 + (i * 0.1) }}
               className="p-4"
             >
-              <h3 className="text-3xl md:text-4xl font-black text-gradient mb-2">{stat.value}</h3>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</p>
+              <h3 className="text-2xl md:text-3xl font-black text-gradient mb-2">{stat.value}</h3>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</p>
             </motion.div>
           ))}
         </div>
