@@ -64,16 +64,26 @@ export default function Chat() {
 
     setUploading(true);
     try {
+      if (!storage) throw new Error("Firebase Storage is not initialized. Check your configuration.");
+      console.log("Starting background upload to Firebase Storage...");
       const storageRef = ref(storage, `backgrounds/${user.uid}_${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const uploadResult = await uploadBytes(storageRef, file);
+      console.log("Upload successful:", uploadResult);
       const url = await getDownloadURL(storageRef);
+      console.log("Download URL obtained:", url);
       
       setChatBg(url);
       localStorage.setItem("chat_bg", url);
       toast({ title: "Success", description: "Chat background updated" });
-    } catch (error) {
-      console.error("Background upload error:", error);
-      toast({ title: "Error", description: "Failed to upload background image", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Background upload error details:", error);
+      toast({ 
+        title: "Upload Failed", 
+        description: error.code === 'storage/unauthorized' 
+          ? "Permission denied. Please check your Firebase Storage security rules." 
+          : error.message || "Failed to upload background image.", 
+        variant: "destructive" 
+      });
     } finally {
       setUploading(false);
     }
@@ -182,9 +192,13 @@ export default function Chat() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `chat/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      if (!storage) throw new Error("Firebase Storage is not initialized. Check your configuration.");
+      console.log("Starting chat image upload to Firebase Storage...");
+      const storageRef = ref(storage, `chat/${user.uid}_${Date.now()}_${file.name}`);
+      const uploadResult = await uploadBytes(storageRef, file);
+      console.log("Chat image upload successful:", uploadResult);
       const url = await getDownloadURL(storageRef);
+      console.log("Chat image URL obtained:", url);
 
       const messageData: any = {
         userId: user.uid,
@@ -208,8 +222,15 @@ export default function Chat() {
       console.log("Sending image message:", messageData);
       await addDoc(collection(db, "global_chat"), messageData);
       setReplyingTo(null);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Chat image upload error details:", error);
+      toast({ 
+        title: "Upload Failed", 
+        description: error.code === 'storage/unauthorized' 
+          ? "Permission denied. Please check your Firebase Storage security rules." 
+          : error.message || "Failed to upload image.", 
+        variant: "destructive" 
+      });
     } finally {
       setUploading(false);
     }

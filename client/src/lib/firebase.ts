@@ -19,6 +19,13 @@ const isFirebaseConfigured = !!(
   firebaseConfig.appId
 );
 
+console.log("Firebase Configuration Check:", {
+  apiKey: !!firebaseConfig.apiKey,
+  projectId: !!firebaseConfig.projectId,
+  appId: !!firebaseConfig.appId,
+  storageBucket: firebaseConfig.storageBucket
+});
+
 if (!isFirebaseConfigured) {
   console.warn("Firebase is not fully configured. Please add VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID to environment variables.");
 }
