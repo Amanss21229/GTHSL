@@ -11,6 +11,8 @@ import TestInterface from "@/pages/TestInterface";
 import Result from "@/pages/Result";
 import Admin from "@/pages/Admin";
 import Chat from "@/pages/Chat";
+import Profile from "@/pages/Profile";
+import Results from "@/pages/Results";
 
 function Router() {
   return (
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/result/:id" component={Result} />
       <Route path="/admin" component={Admin} />
       <Route path="/chat" component={Chat} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/results" component={Results} />
       <Route component={NotFound} />
     </Switch>
   );

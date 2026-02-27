@@ -106,14 +106,18 @@ export function Navbar() {
                   </div>
                 </div>
                 <div className="p-1">
-                  <DropdownMenuItem className="cursor-pointer rounded-lg focus:bg-black/5 dark:focus:bg-white/5 focus:text-foreground dark:focus:text-white py-2.5">
-                    <UserIcon className="mr-3 h-4 w-4 text-primary" />
-                    <span className="font-semibold">Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer rounded-lg focus:bg-black/5 dark:focus:bg-white/5 focus:text-foreground dark:focus:text-white py-2.5">
-                    <Award className="mr-3 h-4 w-4 text-accent" />
-                    <span className="font-semibold">My Results</span>
-                  </DropdownMenuItem>
+                  <Link href="/profile">
+                    <DropdownMenuItem className="cursor-pointer rounded-lg focus:bg-black/5 dark:focus:bg-white/5 focus:text-foreground dark:focus:text-white py-2.5">
+                      <UserIcon className="mr-3 h-4 w-4 text-primary" />
+                      <span className="font-semibold">Profile</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/results">
+                    <DropdownMenuItem className="cursor-pointer rounded-lg focus:bg-black/5 dark:focus:bg-white/5 focus:text-foreground dark:focus:text-white py-2.5">
+                      <Award className="mr-3 h-4 w-4 text-accent" />
+                      <span className="font-semibold">My Results</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg py-2.5 mt-1" onClick={signOut}>
                     <LogOut className="mr-3 h-4 w-4" />
                     <span className="font-semibold">Log out</span>
