@@ -46,6 +46,20 @@ export default function Chat() {
 
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [onlineCount, setOnlineCount] = useState(1);
+  const [chatBg, setChatBg] = useState<string | null>(localStorage.getItem("chat_bg"));
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setChatBg(base64);
+        localStorage.setItem("chat_bg", base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     // Presence logic
@@ -266,6 +280,12 @@ export default function Chat() {
             </div>
             
             <div className="flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input type="file" className="hidden" accept="image/*" onChange={handleBgUpload} />
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5" title="Set Chat Background">
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </label>
               <Button variant="ghost" size="icon" className="rounded-full md:flex hidden hover:bg-primary/5">
                 <Info className="h-5 w-5 text-muted-foreground" />
               </Button>
@@ -275,8 +295,15 @@ export default function Chat() {
             </div>
           </header>
 
-          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-background/20 relative">
-            <ScrollArea ref={scrollRef} className="flex-1 h-full px-4 md:px-8">
+          <CardContent 
+            className="flex-1 flex flex-col p-0 overflow-hidden relative bg-cover bg-center transition-all duration-500"
+            style={{ 
+              backgroundImage: chatBg ? `url(${chatBg})` : 'none',
+              backgroundColor: chatBg ? 'transparent' : 'var(--background)' 
+            }}
+          >
+            {chatBg && <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] pointer-events-none" />}
+            <ScrollArea ref={scrollRef} className="flex-1 h-full px-4 md:px-8 relative z-0">
               <div className="space-y-6 py-6 max-w-4xl mx-auto">
                 <AnimatePresence mode="popLayout">
                   {messages.map((msg, index) => {
