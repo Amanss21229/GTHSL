@@ -44,6 +44,8 @@ export default function Chat() {
     return verifiedUsers?.includes(uid);
   };
 
+  const [replyingTo, setReplyingTo] = useState<any>(null);
+
   useEffect(() => {
     const q = query(collection(db, "global_chat"), orderBy("createdAt", "asc"), limit(100));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -74,15 +76,27 @@ export default function Chat() {
     if (!newMessage.trim() || !user) return;
 
     try {
-      await addDoc(collection(db, "global_chat"), {
+      const messageData: any = {
         userId: user.uid,
         userName: user.displayName || "Anonymous",
         userPhoto: user.photoURL,
         content: newMessage,
         createdAt: serverTimestamp(),
         isVerified: isUserVerified(user.uid),
-      });
+      };
+
+      if (replyingTo) {
+        messageData.replyTo = {
+          id: replyingTo.id,
+          content: replyingTo.content,
+          userName: replyingTo.userName,
+          imageUrl: replyingTo.imageUrl
+        };
+      }
+
+      await addDoc(collection(db, "global_chat"), messageData);
       setNewMessage("");
+      setReplyingTo(null);
     } catch (error) {
       toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
     }
@@ -108,7 +122,7 @@ export default function Chat() {
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
 
-      await addDoc(collection(db, "global_chat"), {
+      const messageData: any = {
         userId: user.uid,
         userName: user.displayName || "Anonymous",
         userPhoto: user.photoURL,
@@ -116,7 +130,19 @@ export default function Chat() {
         imageUrl: url,
         createdAt: serverTimestamp(),
         isVerified: isUserVerified(user.uid),
-      });
+      };
+
+      if (replyingTo) {
+        messageData.replyTo = {
+          id: replyingTo.id,
+          content: replyingTo.content,
+          userName: replyingTo.userName,
+          imageUrl: replyingTo.imageUrl
+        };
+      }
+
+      await addDoc(collection(db, "global_chat"), messageData);
+      setReplyingTo(null);
     } catch (error) {
       toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
     } finally {
@@ -130,6 +156,21 @@ export default function Chat() {
       toast({ title: "Success", description: "Message deleted" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete message", variant: "destructive" });
+    }
+  };
+
+  const reportMessage = async (msg: any) => {
+    try {
+      await addDoc(collection(db, "reports"), {
+        messageId: msg.id,
+        content: msg.content,
+        reportedUserId: msg.userId,
+        reporterUserId: user?.uid,
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "Reported", description: "Message has been reported for review" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to report message" });
     }
   };
 
@@ -238,11 +279,19 @@ export default function Chat() {
                               </div>
                             )}
                             
-                            <div className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all duration-300 ${
+                            <div className={`relative group/msg px-4 py-3 rounded-2xl shadow-sm transition-all duration-300 ${
                               isOwn 
                                 ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-[4px] premium-shadow hover:shadow-primary/20' 
                                 : 'bg-background/80 dark:bg-black/40 backdrop-blur-md border border-primary/5 rounded-tl-[4px] hover:border-primary/20'
                             }`}>
+                              {msg.replyTo && (
+                                <div className={`mb-2 p-2 rounded-lg text-xs border-l-4 ${
+                                  isOwn ? 'bg-white/10 border-white/40' : 'bg-primary/5 border-primary/40'
+                                }`}>
+                                  <p className="font-bold opacity-70">{msg.replyTo.userName}</p>
+                                  <p className="truncate opacity-60">{msg.replyTo.content}</p>
+                                </div>
+                              )}
                               {msg.imageUrl ? (
                                 <div className="space-y-2">
                                   <img 
@@ -262,17 +311,49 @@ export default function Chat() {
                                 </span>
                               </div>
 
-                              {isOwn && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all bg-background/50 hover:bg-destructive/10 hover:text-destructive rounded-full"
-                                  onClick={() => deleteMessage(msg.id)}
-                                  data-testid={`delete-msg-${msg.id}`}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
+                              <div className={`absolute top-0 ${isOwn ? '-left-8' : '-right-8'} opacity-0 group-hover/msg:opacity-100 transition-opacity`}>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-primary/10">
+                                      <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-40 p-1" align={isOwn ? "end" : "start"}>
+                                    <div className="flex flex-col gap-1">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="justify-start text-xs h-8" 
+                                        onClick={() => {
+                                          setReplyingTo(msg);
+                                          document.querySelector<HTMLInputElement>('[data-testid="input-chat-message"]')?.focus();
+                                        }}
+                                      >
+                                        Reply
+                                      </Button>
+                                      {isOwn ? (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="justify-start text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                                          onClick={() => deleteMessage(msg.id)}
+                                        >
+                                          Delete
+                                        </Button>
+                                      ) : (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="justify-start text-xs h-8 text-orange-500 hover:text-orange-500 hover:bg-orange-50"
+                                          onClick={() => reportMessage(msg)}
+                                        >
+                                          Report
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -285,6 +366,17 @@ export default function Chat() {
 
             {/* Input Section */}
             <div className="p-4 md:p-6 border-t bg-background/60 backdrop-blur-xl z-10">
+              {replyingTo && (
+                <div className="max-w-4xl mx-auto mb-2 flex items-center justify-between bg-primary/5 p-2 rounded-xl border border-primary/10">
+                  <div className="flex flex-col text-xs overflow-hidden">
+                    <span className="font-bold text-primary">Replying to {replyingTo.userName}</span>
+                    <span className="truncate opacity-70">{replyingTo.content}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setReplyingTo(null)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
               <form onSubmit={sendMessage} className="flex gap-2 md:gap-3 items-center max-w-4xl mx-auto bg-background/80 dark:bg-black/40 p-1.5 md:p-2 rounded-3xl border border-primary/10 shadow-lg focus-within:ring-2 ring-primary/20 transition-all">
                 <input
                   type="file"
