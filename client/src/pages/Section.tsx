@@ -2,7 +2,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
 import { useTests } from "@/hooks/use-tests";
 import { useAttempts } from "@/hooks/use-attempts";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -16,7 +16,10 @@ import {
   RotateCcw,
   BarChart2,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  X,
+  ExternalLink,
+  MessageSquare
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,6 +32,53 @@ const SUBSECTIONS = [
   { id: 'other', title: 'Other Premium Tests', icon: Beaker, color: 'text-pink-500', bg: 'bg-pink-500/10' },
 ];
 
+export function PremiumModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="bg-card border border-primary/20 rounded-[2.5rem] p-8 max-w-lg w-full relative shadow-2xl shadow-primary/20"
+          >
+            <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-muted rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6">
+                <ShieldCheck className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-display font-bold mb-3">Premium Feature</h2>
+              <p className="text-muted-foreground">This feature is only for premium users. Get verified to unlock full access to all test series and advanced features.</p>
+            </div>
+
+            <div className="space-y-4">
+              <a href="https://razorpay.me/@sansa" target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full py-7 rounded-2xl text-lg font-bold bg-primary hover:shadow-lg hover:shadow-primary/20 transition-all">
+                  Pay ₹199 for one month <ExternalLink className="ml-2 w-4 h-4" />
+                </Button>
+              </a>
+              <a href="https://razorpay.me/@sansa" target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full py-7 rounded-2xl text-lg font-bold bg-accent hover:shadow-lg hover:shadow-accent/20 transition-all">
+                  Pay ₹349 for two month <ExternalLink className="ml-2 w-4 h-4" />
+                </Button>
+              </a>
+              <a href="https://t.me/Aman_PersonalBot?text=Enquiry_about_GloBalTestSeries" target="_blank" rel="noopener noreferrer" className="block">
+                <Button variant="outline" className="w-full py-7 rounded-2xl text-lg font-bold border-2">
+                  Contact Owner <MessageSquare className="ml-2 w-4 h-4" />
+                </Button>
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export default function Section() {
   const [, params] = useRoute("/section/:type");
   const [, setLocation] = useLocation();
@@ -36,6 +86,7 @@ export default function Section() {
   const type = params?.type || "NEET";
   const [activeSubsection, setActiveSubsection] = useState(SUBSECTIONS[0].title);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   
   const { tests, loading: loadingTests } = useTests(type, activeSubsection);
   const { attempts, loading: loadingAttempts } = useAttempts();
@@ -84,6 +135,7 @@ export default function Section() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
       
       <div className="container mx-auto px-4 py-8">
         {!isVerified && (
@@ -97,6 +149,9 @@ export default function Section() {
               <h3 className="font-bold text-lg">Account Verification Pending</h3>
               <p className="text-sm opacity-90 font-medium">Your account is currently in limited mode. Please contact admin to get verified for full access to premium features.</p>
             </div>
+            <Button onClick={() => setShowPremiumModal(true)} variant="outline" className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10 font-bold">
+              Get Premium
+            </Button>
           </motion.div>
         )}
 
@@ -110,18 +165,24 @@ export default function Section() {
                 {SUBSECTIONS.map((sub) => (
                   <button
                     key={sub.id}
-                    onClick={() => setActiveSubsection(sub.title)}
+                    onClick={() => {
+                      if (!isVerified && sub.id !== 'pyq') {
+                        setShowPremiumModal(true);
+                        return;
+                      }
+                      setActiveSubsection(sub.title);
+                    }}
                     className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-200 ${
                       activeSubsection === sub.title 
                         ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
                         : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
+                    } ${!isVerified && sub.id !== 'pyq' ? 'opacity-60 grayscale-[0.5]' : ''}`}
                   >
                     <div className={`p-2 rounded-lg ${activeSubsection === sub.title ? 'bg-white/20' : sub.bg}`}>
                       <sub.icon className={`w-5 h-5 ${activeSubsection === sub.title ? 'text-white' : sub.color}`} />
                     </div>
                     <span className="font-semibold text-left flex-grow">{sub.title}</span>
-                    {activeSubsection === sub.title && <ChevronRight className="w-4 h-4" />}
+                    {!isVerified && sub.id !== 'pyq' ? <Lock className="w-4 h-4 opacity-50" /> : (activeSubsection === sub.title && <ChevronRight className="w-4 h-4" />)}
                   </button>
                 ))}
               </div>
@@ -155,7 +216,8 @@ export default function Section() {
                     ? [...testAttempts].sort((a, b) => (b.id || 0) - (a.id || 0))[0]
                     : null;
 
-                  const canAttempt = isVerified || idx === 0; // Only first test free for unverified
+                  // Limit for unverified users: Only first test in PYQ for both NEET and JEE
+                  const canAttempt = isVerified || (activeSubsection === 'Year Wise PYQs' && idx === 0);
 
                   return (
                     <motion.div
@@ -208,8 +270,12 @@ export default function Section() {
                               </Link>
                             )
                           ) : (
-                            <Button disabled size="lg" className="w-full sm:w-auto rounded-xl font-semibold bg-muted text-muted-foreground border-dashed border-2">
-                              <Lock className="mr-2 w-4 h-4" /> Verified Only
+                            <Button 
+                              onClick={() => setShowPremiumModal(true)} 
+                              size="lg" 
+                              className="w-full sm:w-auto rounded-xl font-semibold bg-muted text-muted-foreground border-dashed border-2 hover:bg-muted/80"
+                            >
+                              <Lock className="mr-2 w-4 h-4" /> Get Access
                             </Button>
                           )}
                         </div>

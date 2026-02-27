@@ -10,6 +10,8 @@ export interface IStorage {
   getVerifiedUserUids(): Promise<string[]>;
   updateUserVerification(uid: string, isVerified: boolean): Promise<User>;
   getOrCreateUser(user: any): Promise<User>;
+  getUserByFirebaseUid(uid: string): Promise<User | undefined>;
+  updateUserChatLimit(uid: string, count: number, date: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -37,6 +39,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.firebaseUid, uid))
       .returning();
     return updated;
+  }
+
+  async getUserByFirebaseUid(uid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, uid));
+    return user;
+  }
+
+  async updateUserChatLimit(uid: string, count: number, date: string): Promise<void> {
+    await db.update(users)
+      .set({ dailyMessageCount: count, lastMessageDate: date })
+      .where(eq(users.firebaseUid, uid));
   }
 
   async getOrCreateUser(userData: any): Promise<User> {

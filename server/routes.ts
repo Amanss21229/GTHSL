@@ -115,5 +115,28 @@ export async function registerRoutes(
     res.json(updatedUser);
   });
 
+  app.post("/api/users/:uid/check-chat-limit", async (req, res) => {
+    const { uid } = req.params;
+    const user = await storage.getUserByFirebaseUid(uid);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    if (user.isVerified) {
+      return res.json({ allowed: true });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    if (user.lastMessageDate !== today) {
+      await storage.updateUserChatLimit(uid, 1, today);
+      return res.json({ allowed: true, remaining: 199 });
+    }
+
+    if ((user.dailyMessageCount || 0) >= 200) {
+      return res.json({ allowed: false, remaining: 0 });
+    }
+
+    await storage.updateUserChatLimit(uid, (user.dailyMessageCount || 0) + 1, today);
+    return res.json({ allowed: true, remaining: 200 - (user.dailyMessageCount || 0) - 1 });
+  });
+
   return httpServer;
 }

@@ -9,6 +9,8 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   role: text("role").default("student"),
   isVerified: boolean("is_verified").default(false),
+  dailyMessageCount: integer("daily_message_count").default(0),
+  lastMessageDate: text("last_message_date"),
 });
 
 export const tests = pgTable("tests", {
