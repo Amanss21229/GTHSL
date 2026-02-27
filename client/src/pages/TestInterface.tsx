@@ -36,6 +36,7 @@ export default function TestInterface() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [startTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOmrMobile, setShowOmrMobile] = useState(false);
 
   if (loading) return (
     <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -103,12 +104,72 @@ export default function TestInterface() {
 
   const [showOmrMobile, setShowOmrMobile] = useState(false);
 
+  if (loading) return (
+    <div className="h-screen w-full flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">Loading Test Environment...</p>
+      </div>
+    </div>
+  );
+
+  if (!test) return (
+    <div className="h-screen flex flex-col items-center justify-center gap-4">
+      <AlertCircle className="w-12 h-12 text-destructive" />
+      <h2 className="text-2xl font-bold">Test Not Found</h2>
+      <Button onClick={() => setLocation('/')} variant="outline">Return Home</Button>
+    </div>
+  );
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const attemptId = await submitTest(testId, answers, [], timeSpent);
+      setLocation(`/result/${attemptId}`);
+    } catch (e) {
+      console.error(e);
+      setIsSubmitting(false);
+      // Fallback redirect even if Firestore submission fails to show result if possible or at least exit
+      setLocation("/");
+    }
+  };
+
+  const OmrSheet = () => (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 overflow-y-auto h-full bg-white/5 rounded-2xl border custom-scrollbar">
+      {Array.from({ length: 180 }).map((_, i) => {
+        const qNum = i + 1;
+        return (
+          <div key={qNum} className="flex flex-col gap-2 p-3 border-b border-white/5 hover:bg-white/5 transition-colors rounded-lg">
+            <span className="text-xs font-bold text-muted-foreground flex items-center justify-between">
+              Q{qNum}
+              {answers[qNum] && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+            </span>
+            <div className="flex gap-2 justify-between">
+              {[1, 2, 3, 4].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setAnswers(prev => ({ ...prev, [qNum]: opt }))}
+                  className={`w-9 h-9 rounded-full border-2 text-xs font-bold transition-all flex items-center justify-center ${
+                    answers[qNum] === opt 
+                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20' 
+                    : 'border-muted-foreground/30 hover:border-primary/50 bg-background/50'
+                  }`}
+                  data-testid={`button-option-${qNum}-${opt}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 md:px-8 shrink-0 z-50">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setLocation('/')} className="md:hidden">
-            <ChevronLeft className="w-5 h-5" />
           </Button>
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
             <h1 className="font-bold text-sm md:text-lg truncate max-w-[150px] md:max-w-xs">{test.title}</h1>

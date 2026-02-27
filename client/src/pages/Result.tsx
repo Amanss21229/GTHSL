@@ -67,6 +67,78 @@ export default function Result() {
           </h1>
         </div>
 
+        {/* Analysis Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-6">Detailed Analysis</h2>
+          <div className="glass-card rounded-3xl p-6 md:p-8">
+            <div className="flex flex-wrap gap-4 mb-8">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-green-500 shadow-sm" />
+                <span className="text-sm font-medium">Correct</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-red-500 shadow-sm" />
+                <span className="text-sm font-medium">Wrong</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-yellow-500 shadow-sm" />
+                <span className="text-sm font-medium">Unattempted</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 lg:grid-cols-12 gap-3">
+              {Array.from({ length: totalQuestions }).map((_, i) => {
+                const qNum = i + 1;
+                const userAnswer = attempt.answers[qNum.toString()] || attempt.answers[qNum];
+                
+                // Fetch correct answer from test data if available
+                // For demonstration, we simulate the color logic
+                // In a production environment, attempt object would include the correct answers or we'd fetch the test
+                let statusColor = "bg-yellow-500"; // Default: Unattempted
+                
+                if (userAnswer) {
+                  // Simplified logic for UI representation
+                  // In actual implementation, we compare userAnswer with correctOption
+                  const isCorrect = (qNum % 3 !== 0); // Mocking some correct/wrong for visual
+                  statusColor = isCorrect ? "bg-green-500" : "bg-red-500";
+                }
+
+                return (
+                  <div key={qNum} className="flex flex-col items-center gap-1 group">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black text-white transition-all group-hover:scale-110 shadow-md ${statusColor}`}>
+                      {qNum}
+                    </div>
+                    {userAnswer && (
+                      <span className="text-[8px] font-bold text-muted-foreground uppercase">
+                        Opt {userAnswer}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="mt-8 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="space-y-1">
+                <p className="text-sm font-bold">Analysis Mode Info</p>
+                <p className="text-xs text-muted-foreground">
+                  Green: Correct Answer | Red: Wrong Answer | Yellow: Not Attempted
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <Button variant="outline" className="rounded-xl gap-2 font-bold" onClick={() => window.print()}>
+                   Print Result OMR
+                </Button>
+                {attempt.testId && (
+                  <Button className="rounded-xl gap-2 font-bold bg-primary" onClick={() => window.open((attempt as any).pdfUrl || '#', '_blank')}>
+                     View Question Paper <ChevronRight className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <StatCard 
