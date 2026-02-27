@@ -5,55 +5,71 @@ import { Navbar } from "@/components/Navbar";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[120px]" />
-      <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-accent/20 rounded-full blur-[120px]" />
+    <div className="min-h-screen bg-background relative overflow-hidden selection:bg-primary/30">
+      {/* Dynamic Background Elements */}
+      <div className="hero-glow -top-[10%] -left-[10%] w-[60%] h-[60%] bg-primary/20 rounded-full" />
+      <div className="hero-glow top-[20%] -right-[10%] w-[40%] h-[40%] bg-accent/10 rounded-full" />
+      <div className="hero-glow -bottom-[10%] left-[20%] w-[50%] h-[50%] bg-primary/10 rounded-full" />
 
       <Navbar />
 
-      <main className="container mx-auto px-4 py-12 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+      <main className="container mx-auto px-4 py-16 relative z-10">
+        <div className="text-center max-w-4xl mx-auto mb-20">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4 border border-primary/20">
-              #1 Platform for Medical & Engineering Aspirants
+            <span className="inline-flex items-center gap-2 py-2 px-4 rounded-full bg-white/5 text-primary text-sm font-bold mb-8 border border-white/10 premium-shadow">
+              <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+              #1 Platform for NEET & JEE
             </span>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold mb-6 tracking-tight leading-tight">
-              Master Your <span className="text-gradient">Future</span>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 tracking-tighter leading-[0.9] text-white">
+              Welcome to<br />
+              <span className="text-gradient">Neet Jee Global Test Series</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
-              Experience the most advanced test series for NEET & JEE 2026. 
-              Real exam simulation, detailed analytics, and AI-driven performance insights.
+            <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl mx-auto font-medium">
+              Experience the most realistic computer-based testing platform 
+              designed to elevate your preparation for 2026.
             </p>
           </motion.div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto mb-32">
           {/* NEET Card */}
           <Link href="/section/NEET" className="group">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="glass-card rounded-3xl p-8 h-full relative overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 cursor-pointer"
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="glass-card rounded-[2.5rem] p-10 h-full relative overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:border-primary/50 cursor-pointer group"
             >
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Microscope size={200} />
+              <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <Microscope size={280} />
               </div>
               
               <div className="relative z-10 flex flex-col h-full">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary">
-                  <Microscope size={32} />
+                <div className="flex items-center justify-between mb-8">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20">
+                    <Microscope size={36} />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 bg-white/5 py-1.5 px-3 rounded-lg border border-white/5">2026 Batch</span>
                 </div>
-                <h2 className="text-3xl font-display font-bold mb-4">NEET 2026</h2>
-                <p className="text-muted-foreground mb-8 flex-grow">
-                  Comprehensive biology, physics, and chemistry test series designed by top medical experts.
+                <h2 className="text-4xl font-display font-black mb-6 text-white group-hover:text-primary transition-colors">TEST SERIES For Neet 2026</h2>
+                <p className="text-muted-foreground text-lg mb-10 flex-grow leading-relaxed font-medium">
+                  Comprehensive test series covering all subjects with detailed analytics and performance tracking.
                 </p>
-                <div className="flex items-center text-primary font-semibold group-hover:gap-2 transition-all">
+                
+                <div className="space-y-4 mb-10">
+                  {["Year Wise Test (Last 10 year PYQs)", "PW Neet Test Series 2026", "Allen Neet Test Series 2026", "Akash Neet Test Series 2026"].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-3 border-b border-white/5 text-sm font-semibold text-muted-foreground/80">
+                      <span>{item}</span>
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-center w-full py-4 rounded-2xl bg-primary text-white font-bold group-hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.5)] transition-all active:scale-[0.98]">
                   Start Preparation <ArrowRight className="ml-2 w-5 h-5" />
                 </div>
               </div>
@@ -63,24 +79,37 @@ export default function Home() {
           {/* JEE Card */}
           <Link href="/section/JEE" className="group">
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="glass-card rounded-3xl p-8 h-full relative overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/20 cursor-pointer"
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="glass-card rounded-[2.5rem] p-10 h-full relative overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:border-accent/50 cursor-pointer group"
             >
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Atom size={200} />
+              <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <Atom size={280} />
               </div>
               
               <div className="relative z-10 flex flex-col h-full">
-                <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mb-6 text-accent">
-                  <Atom size={32} />
+                <div className="flex items-center justify-between mb-8">
+                  <div className="w-16 h-16 rounded-2xl bg-accent/20 flex items-center justify-center text-accent border border-accent/20">
+                    <Atom size={36} />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 bg-white/5 py-1.5 px-3 rounded-lg border border-white/5">2026 Batch</span>
                 </div>
-                <h2 className="text-3xl font-display font-bold mb-4">JEE 2026</h2>
-                <p className="text-muted-foreground mb-8 flex-grow">
-                  Advanced engineering entrance test series with complex problem solving and mathematical depth.
+                <h2 className="text-4xl font-display font-black mb-6 text-white group-hover:text-accent transition-colors">TEST SERIES For Jee 2026</h2>
+                <p className="text-muted-foreground text-lg mb-10 flex-grow leading-relaxed font-medium">
+                  Comprehensive test series covering all subjects with detailed analytics and performance tracking.
                 </p>
-                <div className="flex items-center text-accent font-semibold group-hover:gap-2 transition-all">
+
+                <div className="space-y-4 mb-10">
+                  {["Year Wise Test", "PW Jee Test Series 2026", "Allen Jee Test Series 2026", "Other Jee Test Series 2026"].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-3 border-b border-white/5 text-sm font-semibold text-muted-foreground/80">
+                      <span>{item}</span>
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-center w-full py-4 rounded-2xl bg-accent text-white font-bold group-hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.5)] transition-all active:scale-[0.98]">
                   Start Preparation <ArrowRight className="ml-2 w-5 h-5" />
                 </div>
               </div>
@@ -88,8 +117,32 @@ export default function Home() {
           </Link>
         </div>
 
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-32">
+          {[
+            { icon: GraduationCap, title: "Real-time Simulation", desc: "Exact NTA pattern interface to make you exam ready." },
+            { icon: Microscope, title: "All India Rank", desc: "Compete with thousands of students across the globe." },
+            { icon: Atom, title: "Expert Curated", desc: "Questions designed by top faculties from Kota & Delhi." },
+          ].map((feature, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="text-center p-8 rounded-[2rem] bg-white/5 border border-white/5 hover:bg-white/10 transition-all"
+            >
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary mx-auto mb-6">
+                <feature.icon size={24} />
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
+              <p className="text-muted-foreground font-medium">{feature.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
         {/* Stats Section */}
-        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto text-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto text-center mb-20">
           {[
             { label: "Active Users", value: "500+" },
             { label: "Tests Available", value: "1000+" },
@@ -104,8 +157,8 @@ export default function Home() {
               transition={{ delay: 0.4 + (i * 0.1) }}
               className="p-4"
             >
-              <h3 className="text-3xl md:text-4xl font-bold text-gradient mb-2">{stat.value}</h3>
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+              <h3 className="text-3xl md:text-4xl font-black text-gradient mb-2">{stat.value}</h3>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</p>
             </motion.div>
           ))}
         </div>
