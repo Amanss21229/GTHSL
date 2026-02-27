@@ -111,6 +111,7 @@ export default function Admin() {
       setTitle('');
       setPdfFile(null);
       setAnswerKeyRaw('');
+      setSubsection('');
     } finally {
       setLoading(false);
     }
@@ -363,12 +364,19 @@ export default function Admin() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="font-bold">Category</Label>
-                <Input 
-                  placeholder="e.g. Major Test, PYQ" 
-                  value={subsection}
-                  onChange={e => setSubsection(e.target.value)}
-                />
+                <Label className="font-bold">Category (Subsection)</Label>
+                <Select value={subsection} onValueChange={setSubsection}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Year Wise PYQs">Year Wise PYQs</SelectItem>
+                    <SelectItem value="PW Test Series">PW Test Series</SelectItem>
+                    <SelectItem value="Allen Test Series">Allen Test Series</SelectItem>
+                    <SelectItem value="Akash Test Series">Akash Test Series</SelectItem>
+                    <SelectItem value="Other Premium Tests">Other Premium Tests</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
