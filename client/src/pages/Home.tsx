@@ -28,7 +28,7 @@ export default function Home() {
               <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
               #1 Platform for NEET & JEE
             </span>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 tracking-tighter leading-[0.9] text-white">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 tracking-tighter leading-[0.9] text-foreground dark:text-white">
               Welcome to<br />
               <span className="text-gradient">Neet Jee Global Test Series</span>
             </h1>
@@ -59,7 +59,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 bg-white/5 py-1.5 px-3 rounded-lg border border-white/5">2026 Batch</span>
                 </div>
-                <h2 className="text-4xl font-display font-black mb-6 text-white group-hover:text-primary transition-colors">TEST SERIES For Neet 2026</h2>
+                <h2 className="text-4xl font-display font-black mb-6 text-foreground dark:text-white group-hover:text-primary transition-colors">TEST SERIES For Neet 2026</h2>
                 <p className="text-muted-foreground text-lg mb-10 flex-grow leading-relaxed font-medium">
                   Comprehensive test series covering all subjects with detailed analytics and performance tracking.
                 </p>
@@ -82,7 +82,7 @@ export default function Home() {
                 ) : (
                   <Button 
                     onClick={signIn}
-                    className="w-full py-8 rounded-2xl bg-white/10 text-white font-bold text-lg hover:bg-white/20 transition-all active:scale-[0.98] border border-white/10"
+                    className="w-full py-8 rounded-2xl bg-primary/10 dark:bg-white/10 text-primary dark:text-white font-bold text-lg hover:bg-primary/20 dark:hover:bg-white/20 transition-all active:scale-[0.98] border border-primary/20 dark:border-white/10"
                   >
                     <Lock className="mr-2 w-5 h-5" /> Login to Start
                   </Button>
@@ -110,7 +110,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 bg-white/5 py-1.5 px-3 rounded-lg border border-white/5">2026 Batch</span>
                 </div>
-                <h2 className="text-4xl font-display font-black mb-6 text-white group-hover:text-accent transition-colors">TEST SERIES For Jee 2026</h2>
+                <h2 className="text-4xl font-display font-black mb-6 text-foreground dark:text-white group-hover:text-accent transition-colors">TEST SERIES For Jee 2026</h2>
                 <p className="text-muted-foreground text-lg mb-10 flex-grow leading-relaxed font-medium">
                   Comprehensive test series covering all subjects with detailed analytics and performance tracking.
                 </p>
@@ -133,7 +133,7 @@ export default function Home() {
                 ) : (
                   <Button 
                     onClick={signIn}
-                    className="w-full py-8 rounded-2xl bg-white/10 text-white font-bold text-lg hover:bg-white/20 transition-all active:scale-[0.98] border border-white/10"
+                    className="w-full py-8 rounded-2xl bg-primary/10 dark:bg-white/10 text-primary dark:text-white font-bold text-lg hover:bg-primary/20 dark:hover:bg-white/20 transition-all active:scale-[0.98] border border-primary/20 dark:border-white/10"
                   >
                     <Lock className="mr-2 w-5 h-5" /> Login to Start
                   </Button>

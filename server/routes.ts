@@ -115,6 +115,19 @@ export async function registerRoutes(
     res.json(updatedUser);
   });
 
+  app.get("/api/admin/stats", async (_req, res) => {
+    const users = await storage.getUsers();
+    const tests = await storage.getTests();
+    const attempts = await storage.getAllAttempts();
+    
+    res.json({
+      totalUsers: users.length,
+      totalTests: tests.length,
+      totalAttempts: attempts.length,
+      attempts: attempts
+    });
+  });
+
   app.post("/api/users/:uid/check-chat-limit", async (req, res) => {
     const { uid } = req.params;
     const user = await storage.getUserByFirebaseUid(uid);

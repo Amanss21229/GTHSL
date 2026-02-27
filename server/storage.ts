@@ -12,6 +12,8 @@ export interface IStorage {
   getOrCreateUser(user: any): Promise<User>;
   getUserByFirebaseUid(uid: string): Promise<User | undefined>;
   updateUserChatLimit(uid: string, count: number, date: string): Promise<void>;
+  getAttemptsByUserId(userId: number): Promise<Attempt[]>;
+  getAllAttempts(): Promise<(Attempt & { userName: string, userEmail: string, testTitle: string })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -50,6 +52,30 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ dailyMessageCount: count, lastMessageDate: date })
       .where(eq(users.firebaseUid, uid));
+  }
+
+  async getAttemptsByUserId(userId: number): Promise<Attempt[]> {
+    return await db.select().from(attempts).where(eq(attempts.userId, userId));
+  }
+
+  async getAllAttempts(): Promise<(Attempt & { userName: string, userEmail: string, testTitle: string })[]> {
+    const results = await db
+      .select({
+        attempt: attempts,
+        userName: users.name,
+        userEmail: users.email,
+        testTitle: tests.title,
+      })
+      .from(attempts)
+      .innerJoin(users, eq(attempts.userId, users.id))
+      .innerJoin(tests, eq(attempts.testId, tests.id));
+    
+    return results.map(r => ({
+      ...r.attempt,
+      userName: r.userName,
+      userEmail: r.userEmail,
+      testTitle: r.testTitle,
+    }));
   }
 
   async getOrCreateUser(userData: any): Promise<User> {

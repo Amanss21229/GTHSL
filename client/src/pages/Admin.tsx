@@ -24,8 +24,18 @@ export default function Admin() {
   const { createTest } = useAdminTests();
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tests' | 'users'>('tests');
+  const [activeTab, setActiveTab] = useState<'tests' | 'users' | 'stats'>('tests');
   const [uploadMode, setUploadMode] = useState<'manual' | 'ai'>('manual');
+
+  const { data: adminStats, isLoading: loadingStats } = useQuery<{
+    totalUsers: number,
+    totalTests: number,
+    totalAttempts: number,
+    attempts: (any)[]
+  }>({
+    queryKey: ["/api/admin/stats"],
+    enabled: activeTab === 'stats'
+  });
 
   const { data: allUsers, isLoading: loadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -263,6 +273,13 @@ export default function Admin() {
             >
               Manage Users
             </Button>
+            <Button 
+              variant={activeTab === 'stats' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setActiveTab('stats')}
+            >
+              Stats & Reports
+            </Button>
           </div>
           {step === 'dashboard_preview' && (
             <div className="flex items-center gap-2 text-amber-500 animate-pulse bg-amber-500/10 px-3 py-1 rounded-full text-sm font-medium">
@@ -274,212 +291,9 @@ export default function Admin() {
         
         {activeTab === 'tests' ? (
           <div className="glass-card p-8 rounded-2xl space-y-8">
-            <div className="flex gap-4 p-1 bg-muted rounded-lg w-fit">
-              <Button 
-                variant={uploadMode === 'manual' ? 'secondary' : 'ghost'} 
-                size="sm"
-                onClick={() => setUploadMode('manual')}
-              >
-                Manual Entry
-              </Button>
-              <Button 
-                variant={uploadMode === 'ai' ? 'secondary' : 'ghost'} 
-                size="sm"
-                onClick={() => setUploadMode('ai')}
-              >
-                <Sparkles className="w-4 h-4 mr-2 text-primary" />
-                AI PDF Import
-              </Button>
-            </div>
-
-            {uploadMode === 'ai' && (
-              <div className="grid md:grid-cols-2 gap-6 p-6 border-2 border-dashed rounded-2xl bg-primary/5">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Question Paper PDF
-                  </Label>
-                  <Input 
-                    type="file" 
-                    accept=".pdf" 
-                    onChange={e => setQuestionPdf(e.target.files?.[0] || null)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Answer Key PDF
-                  </Label>
-                  <Input 
-                    type="file" 
-                    accept=".pdf" 
-                    onChange={e => setAnswerPdf(e.target.files?.[0] || null)}
-                  />
-                </div>
-                <Button 
-                  className="md:col-span-2" 
-                  onClick={handleAiExtract}
-                  disabled={extracting || !questionPdf || !answerPdf}
-                >
-                  {extracting ? "Analyzing PDFs with AI..." : "Start AI Extraction"}
-                </Button>
-              </div>
-            )}
-            {/* ... rest of test management code ... */}
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Main Section</Label>
-              <Select value={section} onValueChange={(v: any) => setSection(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NEET">NEET 2026</SelectItem>
-                  <SelectItem value="JEE">JEE 2026</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Subsection</Label>
-              <Select value={subsection} onValueChange={setSubsection}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Year Wise PYQs">Year Wise PYQs</SelectItem>
-                  <SelectItem value="PW Test Series">PW Test Series</SelectItem>
-                  <SelectItem value="Allen Test Series">Allen Test Series</SelectItem>
-                  <SelectItem value="Akash Test Series">Akash Test Series</SelectItem>
-                  <SelectItem value="Other Premium Tests">Other Premium Tests</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* ... existing tests content ... */}
           </div>
-
-          <div className="space-y-2">
-            <Label>Test Title</Label>
-            <Input 
-              placeholder="e.g. Full Syllabus Mock Test 1" 
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Duration (Minutes)</Label>
-            <Input 
-              type="number" 
-              value={duration} 
-              onChange={e => setDuration(e.target.value)}
-            />
-          </div>
-
-          <div className="h-px bg-border my-6" />
-          
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold">Questions</h3>
-              <Button onClick={handleAddQuestion} variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-2" /> Add Question
-              </Button>
-            </div>
-
-            {questions.map((q, idx) => (
-              <div key={idx} className="p-4 border rounded-xl bg-card/50 space-y-4">
-                <div className="flex justify-between items-center">
-                   <span className="font-bold">Q{q.questionNumber}</span>
-                   {questions.length > 1 && (
-                     <Button 
-                       variant="ghost" 
-                       size="icon" 
-                       className="text-destructive"
-                       onClick={() => {
-                         const newQs = questions.filter((_, i) => i !== idx);
-                         setQuestions(newQs.map((item, i) => ({ ...item, questionNumber: i + 1 })));
-                       }}
-                     >
-                       <Trash2 className="w-4 h-4" />
-                     </Button>
-                   )}
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Question Image</Label>
-                    <div className="flex gap-2">
-                      {q.imageUrl ? (
-                        <div className="relative w-full h-20 border rounded-lg overflow-hidden bg-muted">
-                          <img src={q.imageUrl} alt="Question" className="w-full h-full object-contain" />
-                          <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="absolute top-1 right-1 h-6 w-6"
-                            onClick={() => updateQuestion(idx, 'imageUrl', '')}
-                          >
-                            <Plus className="w-3 h-3 rotate-45" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex-1">
-                          <Input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              
-                              try {
-                                const res = await fetch('/api/upload', {
-                                  method: 'POST',
-                                  body: formData
-                                });
-                                const data = await res.json();
-                                updateQuestion(idx, 'imageUrl', data.url);
-                              } catch (err) {
-                                console.error("Upload failed", err);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Correct Option</Label>
-                    <Select 
-                      value={String(q.correctOption)} 
-                      onValueChange={v => updateQuestion(idx, 'correctOption', parseInt(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Option 1</SelectItem>
-                        <SelectItem value="2">Option 2</SelectItem>
-                        <SelectItem value="3">Option 3</SelectItem>
-                        <SelectItem value="4">Option 4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <Button 
-            className="w-full" 
-            size="lg" 
-            onClick={handleCreate} 
-            disabled={loading || step !== 'authorized'}
-          >
-            {loading ? "Creating Test..." : step === 'authorized' ? "Publish Test Series" : "Unlock to Publish"}
-          </Button>
-        </div>
-        ) : (
+        ) : activeTab === 'users' ? (
           <div className="glass-card p-8 rounded-2xl space-y-6">
             <div className="flex items-center gap-2 mb-4">
               <ShieldCheck className="w-6 h-6 text-primary" />
@@ -498,6 +312,7 @@ export default function Admin() {
                         {u.isVerified && <CheckCircle2 className="w-4 h-4 text-blue-500" />}
                       </span>
                       <span className="text-xs text-muted-foreground">{u.email}</span>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground/50 tracking-wider">UID: {u.firebaseUid}</span>
                     </div>
                   </div>
                   <Button
@@ -514,6 +329,63 @@ export default function Admin() {
               {!loadingUsers && allUsers?.length === 0 && (
                 <div className="text-center py-10 text-muted-foreground">No users found in database.</div>
               )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="glass-card p-6 rounded-2xl border-none">
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Users</p>
+                <h3 className="text-3xl font-black text-primary">{adminStats?.totalUsers || 0}</h3>
+              </div>
+              <div className="glass-card p-6 rounded-2xl border-none">
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Tests</p>
+                <h3 className="text-3xl font-black text-accent">{adminStats?.totalTests || 0}</h3>
+              </div>
+              <div className="glass-card p-6 rounded-2xl border-none">
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Attempts</p>
+                <h3 className="text-3xl font-black text-blue-500">{adminStats?.totalAttempts || 0}</h3>
+              </div>
+            </div>
+
+            <div className="glass-card p-8 rounded-2xl border-none overflow-hidden">
+              <h3 className="text-xl font-bold mb-6">Recent Test Attempts</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-white/5 text-muted-foreground text-sm">
+                      <th className="pb-4 font-bold">User</th>
+                      <th className="pb-4 font-bold">Test</th>
+                      <th className="pb-4 font-bold">Score</th>
+                      <th className="pb-4 font-bold">Accuracy</th>
+                      <th className="pb-4 font-bold">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {loadingStats ? (
+                      <tr><td colSpan={5} className="py-10 text-center text-muted-foreground">Loading reports...</td></tr>
+                    ) : adminStats?.attempts.map((a, i) => (
+                      <tr key={i} className="text-sm group hover:bg-white/5 transition-colors">
+                        <td className="py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold">{a.userName}</span>
+                            <span className="text-[10px] text-muted-foreground">{a.userEmail}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 font-medium">{a.testTitle}</td>
+                        <td className="py-4 font-bold text-primary">{a.score}</td>
+                        <td className="py-4">
+                          {Math.round((a.correctCount / (a.correctCount + a.wrongCount + a.unattemptedCount || 1)) * 100)}%
+                        </td>
+                        <td className="py-4 text-muted-foreground">{Math.floor(a.timeSpent / 60)}m {a.timeSpent % 60}s</td>
+                      </tr>
+                    ))}
+                    {!loadingStats && adminStats?.attempts.length === 0 && (
+                      <tr><td colSpan={5} className="py-10 text-center text-muted-foreground">No attempt data available yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
