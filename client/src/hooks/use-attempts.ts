@@ -90,23 +90,34 @@ export function useSubmitTest() {
     const user = auth.currentUser;
     if (!user) throw new Error("Must be logged in");
 
+    // Fetch test to get answer key
+    const testDoc = await getDoc(doc(db, 'tests', testId));
+    if (!testDoc.exists()) throw new Error("Test not found");
+    const testData = testDoc.data();
+    const answerKey = testData.answerKey || {};
+
     let score = 0;
     let correct = 0;
     let wrong = 0;
     let unattempted = 0;
 
-    questions.forEach(q => {
-      const userAnswer = answers[q.questionNumber];
+    // Use 180 as default for OMR
+    const totalQuestions = 180;
+
+    for (let i = 1; i <= totalQuestions; i++) {
+      const userAnswer = answers[i];
+      const correctAnswer = answerKey[i];
+
       if (!userAnswer) {
         unattempted++;
-      } else if (userAnswer === q.correctOption) {
+      } else if (userAnswer === correctAnswer) {
         correct++;
         score += 4;
       } else {
         wrong++;
         score -= 1;
       }
-    });
+    }
 
     const attemptData = {
       userId: user.uid,

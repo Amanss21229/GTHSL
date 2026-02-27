@@ -19,6 +19,8 @@ export interface Test {
   section: 'NEET' | 'JEE';
   subsection: string;
   duration: number; // in minutes
+  pdfUrl?: string;
+  answerKey?: Record<number, number>;
   createdAt: any;
 }
 
@@ -113,15 +115,16 @@ export function useAdminTests() {
         createdAt: Timestamp.now()
       });
       
-      // 2. Add Questions
-      const promises = questions.map(q => 
-        addDoc(collection(db, 'questions'), {
-          ...q,
-          testId: testRef.id
-        })
-      );
-      
-      await Promise.all(promises);
+      // 2. Add Questions (if any)
+      if (questions && questions.length > 0) {
+        const promises = questions.map(q => 
+          addDoc(collection(db, 'questions'), {
+            ...q,
+            testId: testRef.id
+          })
+        );
+        await Promise.all(promises);
+      }
       
       toast({
         title: "Success",

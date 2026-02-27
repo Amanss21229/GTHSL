@@ -62,14 +62,61 @@ export default function Admin() {
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState('180');
   
-  // Questions State
-  const [questions, setQuestions] = useState<Omit<Question, 'id' | 'testId'>[]>([
-    { questionNumber: 1, imageUrl: '', correctOption: 1 }
-  ]);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [answerKeyRaw, setAnswerKeyRaw] = useState('');
 
-  const [questionPdf, setQuestionPdf] = useState<File | null>(null);
-  const [answerPdf, setAnswerPdf] = useState<File | null>(null);
-  
+  const parseAnswerKey = (raw: string) => {
+    const key: Record<number, number> = {};
+    const lines = raw.split(/[\n,;]/);
+    lines.forEach(line => {
+      // Improved regex to handle various formats like "1-1", "1 - a", "1:2", etc.
+      const match = line.match(/(\d+)\s*[:\-\s]\s*([1-4a-dA-D])/);
+      if (match) {
+        const qNum = parseInt(match[1]);
+        const ans = match[2].toLowerCase();
+        const ansMap: Record<string, number> = { 'a': 1, 'b': 2, 'c': 3, 'd': 4, '1': 1, '2': 2, '3': 3, '4': 4 };
+        key[qNum] = ansMap[ans];
+      }
+    });
+    return key;
+  };
+
+  const handleCreate = async () => {
+    if (step !== 'authorized') return;
+    setLoading(true);
+    try {
+      let finalPdfUrl = '';
+      if (pdfFile) {
+        const formData = new FormData();
+        formData.append('file', pdfFile);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        finalPdfUrl = data.url;
+      }
+
+      const parsedKey = parseAnswerKey(answerKeyRaw);
+      
+      await createTest({
+        title,
+        section,
+        subsection,
+        duration: parseInt(duration),
+        pdfUrl: finalPdfUrl,
+        answerKey: parsedKey,
+      }, []);
+      
+      toast({
+        title: "Success",
+        description: "Test series published successfully!"
+      });
+      setTitle('');
+      setPdfFile(null);
+      setAnswerKeyRaw('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const ADMIN_PASS1 = import.meta.env.VITE_ADMIN_PASS1;
   const ADMIN_PASS2 = import.meta.env.VITE_ADMIN_PASS2;
 
@@ -161,42 +208,6 @@ export default function Admin() {
       </div>
     );
   }
-
-  const handleAddQuestion = () => {
-    setQuestions(prev => [
-      ...prev, 
-      { questionNumber: prev.length + 1, imageUrl: '', correctOption: 1 }
-    ]);
-  };
-
-  const updateQuestion = (idx: number, field: keyof Question, value: any) => {
-    const newQs = [...questions];
-    newQs[idx] = { ...newQs[idx], [field]: value };
-    setQuestions(newQs);
-  };
-
-  const handleCreate = async () => {
-    if (step !== 'authorized') return;
-    setLoading(true);
-    try {
-      await createTest({
-        title,
-        section,
-        subsection,
-        duration: parseInt(duration),
-      }, questions);
-      toast({
-        title: "Success",
-        description: "Test series published successfully!"
-      });
-      setTitle('');
-      setQuestions([{ questionNumber: 1, imageUrl: '', correctOption: 1 }]);
-      setQuestionPdf(null);
-      setAnswerPdf(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAiExtract = async () => {
     if (!questionPdf || !answerPdf) {
@@ -292,29 +303,14 @@ export default function Admin() {
             {activeTab === 'tests' ? (
           <div className="glass-card p-8 rounded-2xl space-y-8">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 p-1 bg-white/5 rounded-xl border border-white/10 w-fit">
-                <Button 
-                  variant={uploadMode === 'manual' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setUploadMode('manual')}
-                  className="rounded-lg font-bold"
-                >
-                  Manual Upload
-                </Button>
-                <Button 
-                  variant={uploadMode === 'ai' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setUploadMode('ai')}
-                  className="rounded-lg font-bold flex gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  AI Smart Extract
-                </Button>
-              </div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <FileText className="w-6 h-6 text-primary" />
+                Create New Test
+              </h2>
 
               <div className="flex gap-4 items-center">
                 <div className="flex flex-col items-end">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-1">Duration</Label>
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-1">Duration (Mins)</Label>
                   <Input 
                     type="number" 
                     value={duration} 
@@ -329,163 +325,71 @@ export default function Admin() {
               <div className="space-y-2">
                 <Label className="font-bold">Test Title</Label>
                 <Input 
-                  placeholder="e.g. Full Syllabus Test 01" 
+                  placeholder="e.g. NEET Full Syllabus Test 01" 
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-bold">Section</Label>
-                  <Select value={section} onValueChange={(v: any) => setSection(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NEET">NEET</SelectItem>
-                      <SelectItem value="JEE">JEE</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-bold">Category</Label>
+              <div className="space-y-2">
+                <Label className="font-bold">Question Paper (PDF)</Label>
+                <div className="relative">
                   <Input 
-                    placeholder="e.g. Allen, PYQ" 
-                    value={subsection}
-                    onChange={e => setSubsection(e.target.value)}
+                    type="file" 
+                    accept=".pdf"
+                    onChange={e => setPdfFile(e.target.files?.[0] || null)}
+                    className="cursor-pointer file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                   />
                 </div>
               </div>
             </div>
 
-            {uploadMode === 'ai' ? (
-              <div className="p-8 border-2 border-dashed border-primary/20 rounded-3xl bg-primary/5 space-y-6">
-                <div className="text-center space-y-2">
-                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-bold">AI Paper Extraction</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    Upload your question paper and answer key. AI will automatically extract all questions and options.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Question Paper (PDF)</Label>
-                    <div className="relative group">
-                      <Input 
-                        type="file" 
-                        accept=".pdf"
-                        onChange={e => setQuestionPdf(e.target.files?.[0] || null)}
-                        className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Key (PDF)</Label>
-                    <Input 
-                      type="file" 
-                      accept=".pdf"
-                      onChange={e => setAnswerPdf(e.target.files?.[0] || null)}
-                      className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-accent/10 file:text-accent hover:file:bg-accent/20"
-                    />
-                  </div>
-                </div>
-
-                <Button 
-                  className="w-full h-12 rounded-xl font-bold text-lg" 
-                  onClick={handleAiExtract}
-                  disabled={extracting}
-                >
-                  {extracting ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Analyzing PDF Contents...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Upload className="w-5 h-5" />
-                      Start AI Extraction
-                    </span>
-                  )}
-                </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="font-bold">Section</Label>
+                <Select value={section} onValueChange={(v: any) => setSection(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NEET">NEET</SelectItem>
+                    <SelectItem value="JEE">JEE</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            ) : null}
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  Questions List
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
-                    {questions.length} Total
-                  </span>
-                </h3>
-                {uploadMode === 'manual' && (
-                  <Button variant="outline" size="sm" onClick={handleAddQuestion} className="gap-2 rounded-xl font-bold">
-                    <Plus className="w-4 h-4" /> Add Question
-                  </Button>
-                )}
+              <div className="space-y-2">
+                <Label className="font-bold">Category</Label>
+                <Input 
+                  placeholder="e.g. Major Test, PYQ" 
+                  value={subsection}
+                  onChange={e => setSubsection(e.target.value)}
+                />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                {questions.map((q, idx) => (
-                  <div key={idx} className="p-4 border border-white/5 bg-white/5 rounded-2xl group relative hover:border-primary/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center font-black text-primary text-lg">
-                        {q.questionNumber}
-                      </div>
-                      <div className="flex-grow space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Question Image URL</Label>
-                          <Input 
-                            placeholder="Paste image URL here..." 
-                            value={q.imageUrl}
-                            onChange={e => updateQuestion(idx, 'imageUrl' as any, e.target.value)}
-                            className="bg-black/20 border-none h-9 focus-visible:ring-1 ring-primary/50"
-                          />
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest whitespace-nowrap">Correct Option:</Label>
-                          <div className="flex gap-2">
-                            {[1, 2, 3, 4].map(opt => (
-                              <button
-                                key={opt}
-                                onClick={() => updateQuestion(idx, 'correctOption' as any, opt)}
-                                className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${
-                                  q.correctOption === opt 
-                                  ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-110' 
-                                  : 'bg-black/20 text-muted-foreground hover:bg-black/40'
-                                }`}
-                              >
-                                {opt}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      {uploadMode === 'manual' && questions.length > 1 && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => setQuestions(qs => qs.filter((_, i) => i !== idx))}
-                          className="text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label className="font-bold">Answer Key (180 Questions)</Label>
+                <span className="text-[10px] text-muted-foreground">Format: 1-1, 2-a, 3:3...</span>
               </div>
+              <textarea 
+                className="w-full h-40 p-4 rounded-xl bg-black/20 border border-white/10 focus:ring-1 ring-primary/50 text-sm font-mono custom-scrollbar"
+                placeholder="Paste answer key here. e.g.&#10;1-1&#10;2-4&#10;3-2&#10;4-a..."
+                value={answerKeyRaw}
+                onChange={e => setAnswerKeyRaw(e.target.value)}
+              />
             </div>
 
             <Button 
               className="w-full py-8 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-black text-xl shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
               onClick={handleCreate}
-              disabled={loading || !title || questions.some(q => !q.imageUrl)}
+              disabled={loading || !title || !pdfFile || !answerKeyRaw}
             >
-              {loading ? "Publishing Test..." : "Publish Test Series Now"}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  Publishing Test...
+                </span>
+              ) : "Publish Test Series Now"}
             </Button>
           </div>
         ) : activeTab === 'users' ? (

@@ -94,6 +94,14 @@ export async function registerRoutes(
     res.json(allTests);
   });
 
+  app.get("/api/tests/:id", async (req, res) => {
+    const testId = parseInt(req.params.id);
+    const allTests = await storage.getTests();
+    const test = allTests.find(t => t.id === testId);
+    if (!test) return res.status(404).json({ message: "Test not found" });
+    res.json(test);
+  });
+
   app.get("/api/users", async (req, res) => {
     const allUsers = await storage.getUsers();
     res.json(allUsers);

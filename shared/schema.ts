@@ -20,6 +20,8 @@ export const tests = pgTable("tests", {
   section: text("section").notNull(),
   subsection: text("subsection").notNull(), 
   duration: integer("duration").notNull(),
+  pdfUrl: text("pdf_url"),
+  answerKey: json("answer_key"),
 });
 
 export const questions = pgTable("questions", {
