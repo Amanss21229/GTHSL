@@ -35,12 +35,19 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-black/5 dark:border-white/5 bg-background/60 backdrop-blur-xl shadow-2xl shadow-black/5 dark:shadow-black/50">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-black text-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg shadow-primary/20">
-            N
+          <div className="relative">
+            <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-primary via-accent to-blue-500 flex items-center justify-center text-white font-black text-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-[0_0_20px_rgba(139,92,246,0.4)] overflow-hidden">
+              <span className="relative z-10">N</span>
+              <div className="absolute inset-0 bg-white/20 blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-700" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background shadow-sm" />
           </div>
-          <span className="font-display font-black text-2xl tracking-tighter text-foreground">
-            NEET JEE <span className="text-primary">GLOBAL</span>
-          </span>
+          <div className="flex flex-col -space-y-1">
+            <span className="font-display font-black text-2xl tracking-tighter text-foreground bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+              NEET JEE <span className="text-primary drop-shadow-[0_0_10px_rgba(139,92,246,0.3)]">GLOBAL</span>
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 pl-0.5">Premium Learning</span>
+          </div>
         </Link>
 
         <div className="flex items-center gap-4 md:gap-6">
