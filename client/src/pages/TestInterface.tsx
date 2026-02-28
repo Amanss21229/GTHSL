@@ -11,7 +11,8 @@ import {
   AlertCircle,
   FileText,
   PenTool,
-  X
+  X,
+  CheckCircle2
 } from "lucide-react";
 import {
   AlertDialog,
