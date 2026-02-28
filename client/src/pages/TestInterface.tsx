@@ -28,6 +28,45 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useSubmitTest } from "@/hooks/use-attempts";
 
+function OmrSheet({ answers, onAnswer }: { answers: Record<number, number>, onAnswer: (qNum: number, opt: number) => void }) {
+  return (
+    <div className="flex flex-col gap-0 p-4 overflow-y-auto h-full bg-white/5 rounded-2xl border custom-scrollbar">
+      {Array.from({ length: 180 }).map((_, i) => {
+        const qNum = i + 1;
+        return (
+          <div key={qNum} className="flex items-center justify-between py-3 px-4 border-b border-white/5 hover:bg-white/5 transition-colors group shrink-0">
+            <div className="flex items-center gap-3 min-w-[60px]">
+              <span className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
+                {qNum}.
+              </span>
+              {answers[qNum] && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+            </div>
+            <div className="flex gap-3 justify-end flex-1 max-w-[240px]">
+              {[1, 2, 3, 4].map(opt => (
+                <button
+                  key={opt}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onAnswer(qNum, opt);
+                  }}
+                  className={`w-10 h-10 rounded-full border-2 text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
+                    answers[qNum] === opt 
+                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20' 
+                    : 'border-muted-foreground/30 hover:border-primary/50 bg-background/50 hover:scale-105 active:scale-95'
+                  }`}
+                  data-testid={`button-option-${qNum}-${opt}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TestInterface() {
   const [, params] = useRoute("/test/:id");
   const testId = params?.id || "";
@@ -41,6 +80,24 @@ export default function TestInterface() {
   const [startTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOmrMobile, setShowOmrMobile] = useState(false);
+
+  // Auto-scroll prevention: Store scroll position
+  useEffect(() => {
+    const omrContainer = document.querySelector('.custom-scrollbar');
+    if (omrContainer) {
+      const handleScroll = () => {
+        localStorage.setItem(`test_scroll_${testId}`, omrContainer.scrollTop.toString());
+      };
+      omrContainer.addEventListener('scroll', handleScroll);
+      
+      const savedScroll = localStorage.getItem(`test_scroll_${testId}`);
+      if (savedScroll) {
+        omrContainer.scrollTop = parseInt(savedScroll);
+      }
+      
+      return () => omrContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [testId]);
 
   if (loading) return (
     <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -63,6 +120,7 @@ export default function TestInterface() {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      localStorage.removeItem(`test_scroll_${testId}`);
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
       const attemptId = await submitTest(testId, answers, [], timeSpent);
       setLocation(`/result/${attemptId}`);
@@ -74,23 +132,28 @@ export default function TestInterface() {
   };
 
   const OmrSheet = () => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 overflow-y-auto h-full bg-white/5 rounded-2xl border custom-scrollbar">
+    <div className="flex flex-col gap-0 p-4 overflow-y-auto h-full bg-white/5 rounded-2xl border custom-scrollbar">
       {Array.from({ length: 180 }).map((_, i) => {
         const qNum = i + 1;
         return (
-          <div key={qNum} className="flex flex-col gap-2 p-3 border-b border-white/5 hover:bg-white/5 transition-colors rounded-lg group">
-            <span className="text-xs font-bold text-muted-foreground flex items-center justify-between group-hover:text-primary transition-colors">
-              Q{qNum}
-              {answers[qNum] && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
-            </span>
-            <div className="flex gap-2 justify-between mt-1">
+          <div key={qNum} className="flex items-center justify-between py-3 px-4 border-b border-white/5 hover:bg-white/5 transition-colors group shrink-0">
+            <div className="flex items-center gap-3 min-w-[60px]">
+              <span className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
+                {qNum}.
+              </span>
+              {answers[qNum] && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+            </div>
+            <div className="flex gap-3 justify-end flex-1 max-w-[240px]">
               {[1, 2, 3, 4].map(opt => (
                 <button
                   key={opt}
-                  onClick={() => setAnswers(prev => ({ ...prev, [qNum]: opt }))}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setAnswers(prev => ({ ...prev, [qNum]: opt }));
+                  }}
                   className={`w-10 h-10 rounded-full border-2 text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
                     answers[qNum] === opt 
-                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20 rotate-3' 
+                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20' 
                     : 'border-muted-foreground/30 hover:border-primary/50 bg-background/50 hover:scale-105 active:scale-95'
                   }`}
                   data-testid={`button-option-${qNum}-${opt}`}
@@ -173,9 +236,9 @@ export default function TestInterface() {
               <div className="w-full h-full flex flex-col">
                 <iframe 
                   src={`${test.pdfUrl}#page=${pdfPage}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
-                  className="w-full h-full border-none pointer-events-none md:pointer-events-auto"
+                  className="w-full h-full border-none md:pointer-events-auto"
                   title="Question Paper"
-                  key={pdfPage}
+                  style={{ minHeight: '100%' }}
                 />
                 <div className="absolute inset-0 pointer-events-none border-4 border-primary/5 rounded-2xl" />
               </div>
@@ -236,7 +299,10 @@ export default function TestInterface() {
           </div>
           
           <div className="flex-grow overflow-hidden">
-            <OmrSheet />
+            <OmrSheet 
+              answers={answers} 
+              onAnswer={(qNum, opt) => setAnswers(prev => ({ ...prev, [qNum]: opt }))} 
+            />
           </div>
         </aside>
       </div>
