@@ -12,8 +12,14 @@ import {
   FileText,
   PenTool,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +80,7 @@ export default function TestInterface() {
   const { user, dbUser } = useAuth();
   const { test, loading } = useTest(testId);
   const { submitTest } = useSubmitTest();
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   const [pdfPage, setPdfPage] = useState(1);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -233,14 +240,17 @@ export default function TestInterface() {
         <main className={`flex-[2] p-2 md:p-4 flex flex-col gap-2 md:gap-4 border-r overflow-hidden transition-all duration-300 ${showOmrMobile ? 'hidden md:flex' : 'flex'}`}>
           <div className="flex-grow bg-white/5 rounded-2xl overflow-hidden border relative group shadow-inner">
             {test.pdfUrl ? (
-              <div className="w-full h-full flex flex-col">
-                <iframe 
-                  src={`${test.pdfUrl}#page=${pdfPage}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
-                  className="w-full h-full border-none md:pointer-events-auto"
-                  title="Question Paper"
-                  style={{ minHeight: '100%' }}
-                />
-                <div className="absolute inset-0 pointer-events-none border-4 border-primary/5 rounded-2xl" />
+              <div className="w-full h-full flex flex-col bg-white">
+                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+                  <div className="h-full w-full">
+                    <Viewer
+                      fileUrl={test.pdfUrl}
+                      plugins={[defaultLayoutPluginInstance]}
+                      initialPage={pdfPage - 1}
+                    />
+                  </div>
+                </Worker>
+                <div className="absolute inset-0 pointer-events-none border-4 border-primary/5 rounded-2xl z-10" />
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/20">
