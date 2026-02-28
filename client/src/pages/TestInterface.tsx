@@ -77,20 +77,20 @@ export default function TestInterface() {
       {Array.from({ length: 180 }).map((_, i) => {
         const qNum = i + 1;
         return (
-          <div key={qNum} className="flex flex-col gap-2 p-3 border-b border-white/5 hover:bg-white/5 transition-colors rounded-lg">
-            <span className="text-xs font-bold text-muted-foreground flex items-center justify-between">
+          <div key={qNum} className="flex flex-col gap-2 p-3 border-b border-white/5 hover:bg-white/5 transition-colors rounded-lg group">
+            <span className="text-xs font-bold text-muted-foreground flex items-center justify-between group-hover:text-primary transition-colors">
               Q{qNum}
-              {answers[qNum] && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+              {answers[qNum] && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
             </span>
-            <div className="flex gap-2 justify-between">
+            <div className="flex gap-2 justify-between mt-1">
               {[1, 2, 3, 4].map(opt => (
                 <button
                   key={opt}
                   onClick={() => setAnswers(prev => ({ ...prev, [qNum]: opt }))}
-                  className={`w-9 h-9 rounded-full border-2 text-xs font-bold transition-all flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-full border-2 text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
                     answers[qNum] === opt 
-                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20' 
-                    : 'border-muted-foreground/30 hover:border-primary/50 bg-background/50'
+                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20 rotate-3' 
+                    : 'border-muted-foreground/30 hover:border-primary/50 bg-background/50 hover:scale-105 active:scale-95'
                   }`}
                   data-testid={`button-option-${qNum}-${opt}`}
                 >
@@ -158,13 +158,17 @@ export default function TestInterface() {
 
       <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative">
         <main className={`flex-[2] p-2 md:p-4 flex flex-col gap-2 md:gap-4 border-r overflow-hidden transition-all duration-300 ${showOmrMobile ? 'hidden md:flex' : 'flex'}`}>
-          <div className="flex-grow bg-white/5 rounded-2xl overflow-hidden border relative group">
+          <div className="flex-grow bg-white/5 rounded-2xl overflow-hidden border relative group shadow-inner">
             {test.pdfUrl ? (
-              <iframe 
-                src={`${test.pdfUrl}#toolbar=1&navpanes=0&scrollbar=1`} 
-                className="w-full h-full border-none"
-                title="Question Paper"
-              />
+              <div className="w-full h-full flex flex-col">
+                <iframe 
+                  src={`${test.pdfUrl}#page=${pdfPage}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+                  className="w-full h-full border-none pointer-events-none md:pointer-events-auto"
+                  title="Question Paper"
+                  key={pdfPage}
+                />
+                <div className="absolute inset-0 pointer-events-none border-4 border-primary/5 rounded-2xl" />
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/20">
                 <div className="text-center">

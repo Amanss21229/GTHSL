@@ -151,11 +151,11 @@ export default function Chat() {
     try {
       const messageData: any = {
         userId: user.uid,
-        userName: user.displayName || "Anonymous",
-        userPhoto: user.photoURL,
-        content: newMessage,
+        userName: user.displayName || user.email?.split('@')[0] || "Student",
+        userPhoto: user.photoURL || null,
+        content: newMessage.trim(),
         createdAt: serverTimestamp(),
-        isVerified: isUserVerified(user.uid),
+        isVerified: !!verifiedUsers?.includes(user.uid),
       };
 
       if (replyingTo) {
@@ -167,12 +167,19 @@ export default function Chat() {
         };
       }
 
-      console.log("Sending text message:", messageData);
-      await addDoc(collection(db, "global_chat"), messageData);
+      console.log("Attempting to send message to global_chat...");
+      const docRef = await addDoc(collection(db, "global_chat"), messageData);
+      console.log("Message sent successfully with ID:", docRef.id);
+      
       setNewMessage("");
       setReplyingTo(null);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Chat send error:", error);
+      toast({ 
+        title: "Send Failed", 
+        description: error.message || "Could not deliver your message. Check your connection.", 
+        variant: "destructive" 
+      });
     }
   };
 
