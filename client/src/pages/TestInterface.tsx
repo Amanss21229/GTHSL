@@ -34,6 +34,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useSubmitTest } from "@/hooks/use-attempts";
 
+// Move OmrSheet outside to prevent re-mounting on every render
 function OmrSheet({ answers, onAnswer }: { answers: Record<number, number>, onAnswer: (qNum: number, opt: number) => void }) {
   return (
     <div className="flex flex-col gap-0 p-4 overflow-y-auto h-full bg-white/5 rounded-2xl border custom-scrollbar">
@@ -80,7 +81,6 @@ export default function TestInterface() {
   const { user, dbUser } = useAuth();
   const { test, loading } = useTest(testId);
   const { submitTest } = useSubmitTest();
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   const [pdfPage, setPdfPage] = useState(1);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -104,7 +104,7 @@ export default function TestInterface() {
       
       return () => omrContainer.removeEventListener('scroll', handleScroll);
     }
-  }, [testId]);
+  }, [testId, showOmrMobile]); // Added showOmrMobile to re-apply scroll when toggled on mobile
 
   if (loading) return (
     <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -137,43 +137,6 @@ export default function TestInterface() {
       setLocation("/");
     }
   };
-
-  const OmrSheet = () => (
-    <div className="flex flex-col gap-0 p-4 overflow-y-auto h-full bg-white/5 rounded-2xl border custom-scrollbar">
-      {Array.from({ length: 180 }).map((_, i) => {
-        const qNum = i + 1;
-        return (
-          <div key={qNum} className="flex items-center justify-between py-3 px-4 border-b border-white/5 hover:bg-white/5 transition-colors group shrink-0">
-            <div className="flex items-center gap-3 min-w-[60px]">
-              <span className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
-                {qNum}.
-              </span>
-              {answers[qNum] && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-            </div>
-            <div className="flex gap-3 justify-end flex-1 max-w-[240px]">
-              {[1, 2, 3, 4].map(opt => (
-                <button
-                  key={opt}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setAnswers(prev => ({ ...prev, [qNum]: opt }));
-                  }}
-                  className={`w-10 h-10 rounded-full border-2 text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
-                    answers[qNum] === opt 
-                    ? 'bg-primary border-primary text-white scale-110 shadow-lg ring-4 ring-primary/20' 
-                    : 'border-muted-foreground/30 hover:border-primary/50 bg-background/50 hover:scale-105 active:scale-95'
-                  }`}
-                  data-testid={`button-option-${qNum}-${opt}`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -242,11 +205,23 @@ export default function TestInterface() {
             {test.pdfUrl ? (
               <div className="w-full h-full flex flex-col bg-white">
                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
-                  <div className="h-full w-full">
+                  <div className="h-full w-full overflow-auto">
                     <Viewer
                       fileUrl={test.pdfUrl}
-                      plugins={[defaultLayoutPluginInstance]}
                       initialPage={pdfPage - 1}
+                      theme={{
+                        theme: 'light',
+                      }}
+                      renderLoader={(percentages: number) => (
+                        <div style={{ width: '240px' }}>
+                          <div className="h-1 bg-primary/20 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary transition-all duration-300" 
+                              style={{ width: `${percentages}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     />
                   </div>
                 </Worker>

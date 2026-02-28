@@ -95,6 +95,10 @@ export default function Admin() {
 
       const parsedKey = parseAnswerKey(answerKeyRaw);
       
+      // If AI extraction happened, we might have questions array. 
+      // But the user specifically asked for the answer key they "put" (daala tha).
+      // So we use parsedKey from the textarea.
+      
       await createTest({
         title,
         section,
@@ -102,7 +106,7 @@ export default function Admin() {
         duration: parseInt(duration),
         pdfUrl: finalPdfUrl,
         answerKey: parsedKey,
-      }, []);
+      }, []); // Passing empty questions array as we use answerKey on the test object itself
       
       toast({
         title: "Success",

@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useAttempt } from "@/hooks/use-attempts";
+import { useTest } from "@/hooks/use-tests";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import {
@@ -7,39 +8,36 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
   Tooltip,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { 
   CheckCircle, 
   XCircle, 
-  MinusCircle, 
-  Trophy, 
   Clock, 
-  Share2,
+  Trophy, 
   ChevronRight
 } from "lucide-react";
 
 export default function Result() {
   const [, params] = useRoute("/result/:id");
   const attemptId = params?.id || "";
-  const { attempt, loading } = useAttempt(attemptId);
+  const { attempt, loading: attemptLoading } = useAttempt(attemptId);
+  const { test, loading: testLoading } = useTest(attempt?.testId?.toString() || "");
 
-  if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
+  if (attemptLoading || (attempt && testLoading)) return <div className="h-screen flex items-center justify-center">Loading...</div>;
   if (!attempt) return <div>Result not found</div>;
 
-  const totalQuestions = attempt.correctCount + attempt.wrongCount + attempt.unattemptedCount;
+  const totalQuestions = 180; // Standard for this app
   const accuracy = Math.round((attempt.correctCount / (attempt.correctCount + attempt.wrongCount)) * 100) || 0;
   
   const pieData = [
     { name: 'Correct', value: attempt.correctCount, color: '#22c55e' },
     { name: 'Wrong', value: attempt.wrongCount, color: '#ef4444' },
-    { name: 'Unattempted', value: attempt.unattemptedCount, color: '#94a3b8' },
+    { name: 'Unattempted', value: attempt.unattemptedCount, color: '#eab308' },
   ];
+
+  const answerKey = (test?.answerKey as Record<string, number>) || {};
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -90,17 +88,17 @@ export default function Result() {
               {Array.from({ length: totalQuestions }).map((_, i) => {
                 const qNum = i + 1;
                 const userAnswer = attempt.answers[qNum.toString()] || attempt.answers[qNum];
+                const correctAnswer = answerKey[qNum.toString()] || answerKey[qNum];
                 
-                // Fetch correct answer from test data if available
-                // For demonstration, we simulate the color logic
-                // In a production environment, attempt object would include the correct answers or we'd fetch the test
                 let statusColor = "bg-yellow-500"; // Default: Unattempted
                 
                 if (userAnswer) {
-                  // Simplified logic for UI representation
-                  // In actual implementation, we compare userAnswer with correctOption
-                  const isCorrect = (qNum % 3 !== 0); // Mocking some correct/wrong for visual
-                  statusColor = isCorrect ? "bg-green-500" : "bg-red-500";
+                  if (correctAnswer) {
+                    statusColor = userAnswer === correctAnswer ? "bg-green-500" : "bg-red-500";
+                  } else {
+                    // Fallback if answer key is missing for this question
+                    statusColor = "bg-green-500"; 
+                  }
                 }
 
                 return (
@@ -129,8 +127,8 @@ export default function Result() {
                 <Button variant="outline" className="rounded-xl gap-2 font-bold" onClick={() => window.print()}>
                    Print Result OMR
                 </Button>
-                {attempt.testId && (
-                  <Button className="rounded-xl gap-2 font-bold bg-primary" onClick={() => window.open((attempt as any).pdfUrl || '#', '_blank')}>
+                {test?.pdfUrl && (
+                  <Button className="rounded-xl gap-2 font-bold bg-primary" onClick={() => window.open(test.pdfUrl || '#', '_blank')}>
                      View Question Paper <ChevronRight className="w-4 h-4" />
                   </Button>
                 )}
