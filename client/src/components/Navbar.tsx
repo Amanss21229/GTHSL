@@ -8,18 +8,20 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare, HeadphonesIcon, Send, MessageCircle, CheckCircle2, Calendar } from "lucide-react";
+import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare, HeadphonesIcon, Send, MessageCircle, CheckCircle2, Calendar, Globe } from "lucide-react";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 export function Navbar() {
   const { user, dbUser, signIn, signOut } = useAuth();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [lang, setLang] = useState<'en' | 'hi'>(localStorage.getItem('lang') as 'en' | 'hi' || 'en');
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
     setTheme(isDark ? 'dark' : 'light');
-  }, []);
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -30,6 +32,18 @@ export function Navbar() {
       document.documentElement.classList.remove('dark');
     }
   };
+
+  const toggleLang = () => {
+    const newLang = lang === 'en' ? 'hi' : 'en';
+    setLang(newLang);
+    localStorage.setItem('lang', newLang);
+    window.location.reload();
+  };
+
+  const t = {
+    en: { discussion: "Discussion", support: "Support", signIn: "Sign In", profile: "Profile", results: "My Results", logout: "Log out" },
+    hi: { discussion: "चर्चा", support: "सहायता", signIn: "साइन इन", profile: "प्रोफ़ाइल", results: "मेरे परिणाम", logout: "लॉग आउट" }
+  }[lang];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-black/5 dark:border-white/5 bg-background/60 backdrop-blur-xl shadow-2xl shadow-black/5 dark:shadow-black/50">
@@ -50,19 +64,29 @@ export function Navbar() {
           </div>
         </Link>
 
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-2 md:gap-4">
           <Link href="/chat">
-            <Button variant="ghost" size="sm" className="gap-2 hidden md:flex font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors">
-              <MessageSquare className="h-4 w-4" />
-              Discussion
+            <Button variant="ghost" size="sm" className="gap-2 flex font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors h-10 px-3">
+              <MessageSquare className="h-5 w-5" />
+              <span className="hidden sm:inline">{t.discussion}</span>
             </Button>
           </Link>
 
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleLang}
+            className="gap-2 font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors h-10 px-3"
+          >
+            <Globe className="h-5 w-5" />
+            <span className="uppercase text-xs font-black">{lang === 'en' ? 'HI' : 'EN'}</span>
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors">
-                <HeadphonesIcon className="h-4 w-4" />
-                Support
+              <Button variant="ghost" size="sm" className="gap-2 font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors h-10 px-3">
+                <HeadphonesIcon className="h-5 w-5" />
+                <span className="hidden sm:inline">{t.support}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 glass-card mt-2 border-black/5 dark:border-white/10" align="end">
@@ -85,7 +109,7 @@ export function Navbar() {
             variant="ghost" 
             size="icon" 
             onClick={toggleTheme}
-            className="rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors"
+            className="rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors h-10 w-10"
           >
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
@@ -93,7 +117,7 @@ export function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 ring-primary/50 transition-all">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 ring-primary/50 transition-all p-0">
                   <Avatar className="h-10 w-10 border-2 border-black/10 dark:border-white/10">
                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
                     <AvatarFallback className="bg-primary/20 text-primary font-black">
@@ -128,25 +152,25 @@ export function Navbar() {
                   <Link href="/profile">
                     <DropdownMenuItem className="cursor-pointer rounded-lg focus:bg-black/5 dark:focus:bg-white/5 focus:text-foreground dark:focus:text-white py-2.5">
                       <UserIcon className="mr-3 h-4 w-4 text-primary" />
-                      <span className="font-semibold">Profile</span>
+                      <span className="font-semibold">{t.profile}</span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/results">
                     <DropdownMenuItem className="cursor-pointer rounded-lg focus:bg-black/5 dark:focus:bg-white/5 focus:text-foreground dark:focus:text-white py-2.5">
                       <Award className="mr-3 h-4 w-4 text-accent" />
-                      <span className="font-semibold">My Results</span>
+                      <span className="font-semibold">{t.results}</span>
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg py-2.5 mt-1" onClick={signOut}>
                     <LogOut className="mr-3 h-4 w-4" />
-                    <span className="font-semibold">Log out</span>
+                    <span className="font-semibold">{t.logout}</span>
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button onClick={signIn} className="rounded-2xl px-6 md:px-8 h-12 font-black bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_-5px_rgba(139,92,246,0.6)] hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.8)] transition-all active:scale-95">
-              Sign In
+              {t.signIn}
             </Button>
           )}
         </div>

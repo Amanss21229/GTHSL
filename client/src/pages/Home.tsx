@@ -7,6 +7,30 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { user, signIn } = useAuth();
+  const lang = localStorage.getItem('lang') || 'en';
+
+  const t = {
+    en: {
+      hero: "The Gold Standard of Learning Excellence",
+      sub: "\"Precision in practice, excellence in results. Join the elite league of NEET & JEE aspirants.\"",
+      trusted: "Trusted by 20,000+ Students",
+      neet: "Master NEET Curriculum",
+      jee: "Crush JEE Advanced",
+      enter: "ENTER ARENA",
+      start: "START CRUSADE",
+      unlock: "UNLOCK ACCESS"
+    },
+    hi: {
+      hero: "सीखने की उत्कृष्टता का स्वर्ण मानक",
+      sub: "\"अभ्यास में सटीकता, परिणामों में उत्कृष्टता। NEET और JEE उम्मीदवारों की विशिष्ट लीग में शामिल हों।\"",
+      trusted: "20,000+ छात्रों द्वारा भरोसेमंद",
+      neet: "NEET पाठ्यक्रम में महारत हासिल करें",
+      jee: "JEE एडवांस्ड को क्रश करें",
+      enter: "मैदान में प्रवेश करें",
+      start: "धर्मयुद्ध शुरू करें",
+      unlock: "पहुंच अनलॉक करें"
+    }
+  }[lang as 'en' | 'hi'];
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden selection:bg-primary/30">
@@ -30,11 +54,11 @@ export default function Home() {
               Empowering Future Leaders
             </div>
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-black mb-10 tracking-tighter leading-[0.85] text-foreground dark:text-white">
-              The Gold Standard of <br />
-              <span className="text-gradient drop-shadow-[0_10px_30px_rgba(139,92,246,0.3)]">Learning Excellence</span>
+              {t.hero.split('Excellence')[0]} <br />
+              <span className="text-gradient drop-shadow-[0_10px_30px_rgba(139,92,246,0.3)]">{lang === 'hi' ? t.hero : 'Excellence'}</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground/80 mb-12 leading-relaxed max-w-3xl mx-auto font-semibold italic">
-              "Precision in practice, excellence in results. Join the elite league of NEET & JEE aspirants."
+              {t.sub}
             </p>
             <div className="flex flex-wrap justify-center gap-6">
               <div className="flex -space-x-3">
@@ -48,7 +72,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
-                <span className="text-foreground">Trusted by 20,000+ Students</span>
+                <span className="text-foreground">{t.trusted}</span>
                 <div className="flex gap-0.5">
                   {[1,2,3,4,5].map(i => <span key={i} className="text-yellow-500 text-lg">★</span>)}
                 </div>
@@ -58,7 +82,7 @@ export default function Home() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-7xl mx-auto mb-40">
-          {/* NEET Card - Premium Redesign */}
+          {/* NEET Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -79,35 +103,23 @@ export default function Home() {
                 </div>
               </div>
               
-              <h2 className="text-5xl font-display font-black mb-8 leading-tight">Master NEET <br /><span className="text-primary">Curriculum</span></h2>
-              <p className="text-muted-foreground text-lg mb-12 font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">
-                "Experience medical-grade precision in your preparation with our curated test modules."
-              </p>
+              <h2 className="text-5xl font-display font-black mb-8 leading-tight">{t.neet.split('Curriculum')[0]} <br /><span className="text-primary">{lang === 'hi' ? '' : 'Curriculum'}</span></h2>
               
-              <div className="grid grid-cols-2 gap-4 mb-12">
-                {["10 Year PYQs", "PW Test Series", "Allen Modules", "Akash Tests"].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5 group-hover:border-primary/20 transition-all">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-sm font-bold opacity-80">{item}</span>
-                  </div>
-                ))}
-              </div>
-
               {user ? (
                 <Link href="/section/NEET">
                   <Button className="w-full py-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xl shadow-[0_20px_40px_-10px_rgba(139,92,246,0.5)] transition-all active:scale-95 group-hover:shadow-[0_25px_50px_-12px_rgba(139,92,246,0.7)]">
-                    ENTER ARENA <ArrowRight className="ml-3 w-6 h-6 animate-pulse" />
+                    {t.enter} <ArrowRight className="ml-3 w-6 h-6 animate-pulse" />
                   </Button>
                 </Link>
               ) : (
                 <Button onClick={signIn} className="w-full py-10 rounded-2xl bg-white/5 hover:bg-white/10 text-foreground font-black text-xl border border-white/10 transition-all active:scale-95">
-                  <Lock className="mr-3 w-6 h-6" /> UNLOCK ACCESS
+                  <Lock className="mr-3 w-6 h-6" /> {t.unlock}
                 </Button>
               )}
             </div>
           </motion.div>
 
-          {/* JEE Card - Premium Redesign */}
+          {/* JEE Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -128,89 +140,21 @@ export default function Home() {
                 </div>
               </div>
               
-              <h2 className="text-5xl font-display font-black mb-8 leading-tight">Crush JEE <br /><span className="text-accent">Advanced</span></h2>
-              <p className="text-muted-foreground text-lg mb-12 font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">
-                "Engineer your future with mathematical rigor and physics-driven test series."
-              </p>
+              <h2 className="text-5xl font-display font-black mb-8 leading-tight">{t.jee.split('Advanced')[0]} <br /><span className="text-accent">{lang === 'hi' ? '' : 'Advanced'}</span></h2>
               
-              <div className="grid grid-cols-2 gap-4 mb-12">
-                {["Year Wise JEE", "PW Advanced", "Allen Elite", "Physics Galaxy"].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5 group-hover:border-accent/20 transition-all">
-                    <div className="w-2 h-2 rounded-full bg-accent" />
-                    <span className="text-sm font-bold opacity-80">{item}</span>
-                  </div>
-                ))}
-              </div>
-
               {user ? (
                 <Link href="/section/JEE">
                   <Button className="w-full py-10 rounded-2xl bg-accent hover:bg-accent/90 text-white font-black text-xl shadow-[0_20px_40px_-10px_rgba(168,85,247,0.5)] transition-all active:scale-95 group-hover:shadow-[0_25px_50px_-12px_rgba(168,85,247,0.7)]">
-                    START CRUSADE <ArrowRight className="ml-3 w-6 h-6 animate-pulse" />
+                    {t.start} <ArrowRight className="ml-3 w-6 h-6 animate-pulse" />
                   </Button>
                 </Link>
               ) : (
                 <Button onClick={signIn} className="w-full py-10 rounded-2xl bg-white/5 hover:bg-white/10 text-foreground font-black text-xl border border-white/10 transition-all active:scale-95">
-                  <Lock className="mr-3 w-6 h-6" /> UNLOCK ACCESS
+                  <Lock className="mr-3 w-6 h-6" /> {t.unlock}
                 </Button>
               )}
             </div>
           </motion.div>
-        </div>
-
-        {/* Feature Showcase - Unique Aesthetic Section */}
-        <section className="mb-40 text-center">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="glass-card rounded-[4rem] p-16 border-white/10 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/5"
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
-            <h3 className="text-4xl md:text-5xl font-display font-black mb-16 tracking-tight">Why Elite Aspirants Choose Us?</h3>
-            
-            <div className="grid md:grid-cols-3 gap-12">
-              {[
-                { icon: GraduationCap, title: "NTA Mirroring", desc: "Experience the exact testing environment used by NTA to build muscle memory." },
-                { icon: Clock, title: "Nano-Analytics", desc: "Get feedback down to the millisecond spent on each question and concept." },
-                { icon: Send, title: "Global Nexus", desc: "Connect with the brightest minds across India in our high-speed global chat." }
-              ].map((f, i) => (
-                <div key={i} className="flex flex-col items-center group">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:scale-110 group-hover:bg-primary transition-all duration-500 group-hover:text-white">
-                    <f.icon size={32} />
-                  </div>
-                  <h4 className="text-2xl font-black mb-4">{f.title}</h4>
-                  <p className="text-muted-foreground font-medium max-w-xs mx-auto leading-relaxed">{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Stats Grid - Premium Paid Look */}
-        <div className="max-w-7xl mx-auto px-6 py-20 rounded-[4rem] bg-foreground/5 dark:bg-white/5 backdrop-blur-3xl border border-white/5 shadow-2xl">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-12 text-center">
-            {[
-              { label: "Elite Members", value: "20k+" },
-              { label: "Daily Tests", value: "1500+" },
-              { label: "Concepts Mastered", value: "1M+" },
-              { label: "Expert Support", value: "24/7" },
-              { label: "Selection Rate", value: "12X" },
-              { label: "Community", value: "VIP" },
-            ].map((stat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <h3 className="text-4xl font-black text-gradient mb-3 relative z-10">{stat.value}</h3>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] relative z-10 opacity-70">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </main>
     </div>
