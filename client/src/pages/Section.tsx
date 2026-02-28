@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   X,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  CheckCircle2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
