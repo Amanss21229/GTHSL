@@ -82,7 +82,7 @@ export function PremiumModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 export default function Section() {
   const [, params] = useRoute("/section/:type");
   const [, setLocation] = useLocation();
-  const { user, signIn } = useAuth();
+  const { user, signIn, dbUser } = useAuth();
   const type = params?.type || "NEET";
   const [activeSubsection, setActiveSubsection] = useState(SUBSECTIONS[0].title);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
@@ -241,7 +241,12 @@ export default function Section() {
                               </span>
                             )}
                           </div>
-                          <h3 className="text-xl font-bold mb-1">{test.title}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-bold">{test.title}</h3>
+                            {dbUser?.isVerified && (
+                              <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-500/10" />
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             Physics, Chemistry, Biology • +4/-1 Marking
                           </p>

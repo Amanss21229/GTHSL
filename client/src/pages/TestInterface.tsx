@@ -31,7 +31,7 @@ export default function TestInterface() {
   const [, params] = useRoute("/test/:id");
   const testId = params?.id || "";
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, dbUser } = useAuth();
   const { test, loading } = useTest(testId);
   const { submitTest } = useSubmitTest();
 
@@ -119,7 +119,7 @@ export default function TestInterface() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-6">
+          <div className="flex items-center gap-2 md:gap-6">
           <div className="flex items-center gap-2 bg-muted/50 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-primary/20">
             <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary animate-pulse" />
             <Countdown 
@@ -133,26 +133,35 @@ export default function TestInterface() {
             />
           </div>
           
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="destructive" className="font-bold shadow-lg shadow-destructive/20">Submit</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-3xl">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Final Submission?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You have attempted {Object.keys(answers).length} out of 180 questions.
-                  Double check your responses before submitting.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="gap-2">
-                <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSubmit} disabled={isSubmitting} className="rounded-xl bg-primary">
-                  {isSubmitting ? "Submitting..." : "Yes, Submit Test"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex flex-col items-end mr-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-bold">{user?.displayName}</span>
+                {dbUser?.isVerified && <CheckCircle2 className="h-3 w-3 text-blue-500" />}
+              </div>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Candidate</span>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="destructive" className="font-bold shadow-lg shadow-destructive/20 active:scale-95 transition-transform">Submit</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-3xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Final Submission?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You have attempted {Object.keys(answers).length} out of 180 questions.
+                    Double check your responses before submitting.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-2">
+                  <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSubmit} disabled={isSubmitting} className="rounded-xl bg-primary">
+                    {isSubmitting ? "Submitting..." : "Yes, Submit Test"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </header>
 
