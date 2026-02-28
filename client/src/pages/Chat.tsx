@@ -44,9 +44,34 @@ export default function Chat() {
     return verifiedUsers?.includes(uid);
   };
 
-  const [replyingTo, setReplyingTo] = useState<any>(null);
-  const [onlineCount, setOnlineCount] = useState(1);
-  const [chatBg, setChatBg] = useState<string | null>(localStorage.getItem("chat_bg"));
+  const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+    const msgRef = doc(db, "global_chat", messageId);
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg) return;
+
+    const currentReactions = msg.reactions || {};
+    const usersWhoReacted = currentReactions[emoji] || [];
+    
+    let newUsers;
+    if (usersWhoReacted.includes(user.uid)) {
+      newUsers = usersWhoReacted.filter(uid => uid !== user.uid);
+    } else {
+      newUsers = [...usersWhoReacted, user.uid];
+    }
+
+    const newReactions = { ...currentReactions, [emoji]: newUsers };
+    if (newUsers.length === 0) delete newReactions[emoji];
+
+    try {
+      const { updateDoc } = await import("firebase/firestore");
+      await updateDoc(msgRef, { reactions: newReactions });
+    } catch (error) {
+      console.error("Reaction error:", error);
+    }
+  };
 
   const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,12 +234,12 @@ export default function Chat() {
 
       const messageData: any = {
         userId: user.uid,
-        userName: user.displayName || "Anonymous",
+        userName: user.displayName || user.email?.split('@')[0] || "Student",
         userPhoto: user.photoURL,
         content: "[Image]",
         imageUrl: url,
         createdAt: serverTimestamp(),
-        isVerified: isUserVerified(user.uid),
+        isVerified: !!verifiedUsers?.includes(user.uid),
       };
 
       if (replyingTo) {
@@ -354,10 +379,12 @@ export default function Chat() {
           </header>
 
           <CardContent 
-            className="flex-1 flex flex-col p-0 overflow-hidden relative bg-cover bg-center transition-all duration-500"
+            className="flex-1 flex flex-col p-0 overflow-hidden relative bg-cover bg-center bg-no-repeat transition-all duration-500"
             style={{ 
               backgroundImage: chatBg ? `url(${chatBg})` : 'none',
-              backgroundColor: chatBg ? 'transparent' : 'var(--background)' 
+              backgroundColor: chatBg ? 'transparent' : 'var(--background)',
+              backgroundSize: 'cover',
+              backgroundAttachment: 'local'
             }}
           >
             {chatBg && <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] pointer-events-none" />}
@@ -425,9 +452,30 @@ export default function Chat() {
                               
                               <div className={`flex items-center gap-2 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                                 <span className={`text-[9px] opacity-60 font-medium ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                                  {msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                  {msg.createdAt instanceof Date 
+                                    ? `${msg.createdAt.toLocaleDateString([], { day: '2-digit', month: 'short' })} ${msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                    : ''}
                                 </span>
                               </div>
+
+                              {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                                <div className={`flex flex-wrap gap-1 mt-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                  {Object.entries(msg.reactions as Record<string, string[]>).map(([emoji, uids]) => (
+                                    <button
+                                      key={emoji}
+                                      onClick={() => toggleReaction(msg.id, emoji)}
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-1 transition-colors ${
+                                        uids.includes(user.uid) 
+                                          ? 'bg-primary/20 border border-primary/30' 
+                                          : 'bg-muted/50 border border-transparent'
+                                      }`}
+                                    >
+                                      <span>{emoji}</span>
+                                      <span className="font-bold">{uids.length}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
 
                               <div className={`absolute top-0 ${isOwn ? '-left-8' : '-right-8'} opacity-0 group-hover/msg:opacity-100 transition-opacity`}>
                                 <Popover>
@@ -438,6 +486,19 @@ export default function Chat() {
                                   </PopoverTrigger>
                                   <PopoverContent className="w-40 p-1" align={isOwn ? "end" : "start"}>
                                     <div className="flex flex-col gap-1">
+                                      <div className="flex gap-1 p-1 border-b mb-1">
+                                        {['❤️', '👍', '🔥', '😂', '😮', '🙏'].map(emoji => (
+                                          <Button
+                                            key={emoji}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-sm"
+                                            onClick={() => toggleReaction(msg.id, emoji)}
+                                          >
+                                            {emoji}
+                                          </Button>
+                                        ))}
+                                      </div>
                                       <Button 
                                         variant="ghost" 
                                         size="sm" 
