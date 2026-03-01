@@ -6,8 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdf = require("pdf-parse");
+import pdf from "pdf-parse";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
