@@ -62,6 +62,38 @@ export default function Chat() {
     return () => clearInterval(interval);
   }, [user]);
 
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Error", description: "Only image files are allowed", variant: "destructive" });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Error", description: "File too large (max 5MB)", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      if (!storage) throw new Error("Firebase Storage is not initialized.");
+      const storageRef = ref(storage, `backgrounds/${user.uid}_${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setChatBg(url);
+      localStorage.setItem("chat_bg", url);
+      toast({ title: "Success", description: "Chat background updated" });
+    } catch (error: any) {
+      console.error("Background upload error:", error);
+      toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
   useEffect(() => {
     const qPresence = query(
       collection(db, "presence"),
@@ -107,7 +139,7 @@ export default function Chat() {
         content: newMessage.trim(),
         createdAt: serverTimestamp(),
         isVerified: !!verifiedUsers?.includes(user.uid),
-        role: user.role || 'student',
+        role: user.email === import.meta.env.VITE_ADMIN_MAIL ? 'owner' : (user.role || 'student'),
         reactions: {}
       };
 
@@ -146,7 +178,7 @@ export default function Chat() {
         imageUrl: url,
         createdAt: serverTimestamp(),
         isVerified: !!verifiedUsers?.includes(user.uid),
-        role: user.role || 'student',
+        role: user.email === import.meta.env.VITE_ADMIN_MAIL ? 'owner' : (user.role || 'student'),
         reactions: {}
       };
 
@@ -232,6 +264,7 @@ export default function Chat() {
                 {messages.map((msg, index) => {
                   const isOwn = msg.userId === user?.uid;
                   const isAdmin = msg.role === 'admin';
+                  const isOwner = msg.role === 'owner';
                   return (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -253,15 +286,20 @@ export default function Chat() {
                           <div 
                             id={`msg-${msg.id}`}
                             className={`px-4 py-2.5 rounded-2xl shadow-md transition-all duration-200 ${
-                            isOwn 
-                              ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-none hover:shadow-primary/20' 
-                              : 'bg-card/95 backdrop-blur-sm border border-border/40 rounded-tl-none hover:border-primary/30 shadow-sm'
+                            isOwner
+                              ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl border-2 border-amber-300/50 shadow-amber-500/20'
+                              : isOwn 
+                                ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-none hover:shadow-primary/20' 
+                                : 'bg-card/95 backdrop-blur-sm border border-border/40 rounded-tl-none hover:border-primary/30 shadow-sm'
                           }`}>
                             {!isOwn && (
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-[11px] font-bold text-primary/90 uppercase tracking-tighter">{msg.userName}</span>
+                                <span className="text-[11px] font-bold text-primary/90 uppercase tracking-tighter">
+                                  {isOwner ? "👑 OWNER" : msg.userName}
+                                </span>
                                 {msg.isVerified && <CheckCircle2 className="h-3 w-3 text-blue-400 fill-blue-400/10" />}
                                 {isAdmin && <Shield className="h-3 w-3 text-red-500 fill-red-500/10" />}
+                                {isOwner && <Shield className="h-3 w-3 text-amber-300 fill-amber-300/10" />}
                               </div>
                             )}
 
@@ -301,7 +339,7 @@ export default function Chat() {
                                   </button>
                                 ))}
                               </div>
-                              <span className={`text-[9px] font-medium tracking-widest ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground/60'}`}>
+                              <span className={`text-[9px] font-medium tracking-widest ${isOwn || isOwner ? 'text-white/70' : 'text-muted-foreground/60'}`}>
                                 {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
@@ -330,7 +368,7 @@ export default function Chat() {
                               </PopoverContent>
                             </Popover>
 
-                            {(isOwn || isAdmin) && (
+                            {(isOwn || isAdmin || user.role === 'owner') && (
                               <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full shadow-lg border border-border/50 bg-background/95 backdrop-blur-md text-destructive hover:bg-destructive/10" onClick={() => deleteMessage(msg.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -387,7 +425,8 @@ export default function Chat() {
                 <Input 
                   value={newMessage} 
                   onChange={(e) => setNewMessage(e.target.value)} 
-                  placeholder="Message..." 
+                  disabled={user.isMuted && user.role !== 'owner'}
+                  placeholder={user.isMuted && user.role !== 'owner' ? "You are muted" : "Message..."}
                   className="w-full bg-muted/40 border-border/40 rounded-3xl h-11 pl-5 pr-12 focus-visible:ring-primary/30 transition-all group-hover:bg-muted/60" 
                 />
                 <Button 
