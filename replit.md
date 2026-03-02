@@ -60,7 +60,27 @@ The app has a **hybrid data architecture** that's important to understand:
 - **Development**: Vite dev server with HMR, proxied through Express
 - **Production**: Vite builds static files to `dist/public`, Express serves them; server bundled with esbuild to `dist/index.cjs`
 
-## External Dependencies
+## Render Deployment Guide
+
+To deploy this application on Render as a Web Service:
+
+1. **Create a New Web Service** on Render and connect your repository.
+2. **Environment**: Select `Node`.
+3. **Build Command**: `npm install && npm run build`
+4. **Start Command**: `npm start`
+5. **Environment Variables**:
+   - `NODE_ENV`: `production`
+   - `DATABASE_URL`: Your PostgreSQL connection string.
+   - `ADMIN_PASS1`: Your admin password.
+   - `ADMIN_PASS2`: Your second admin password.
+   - `VITE_FIREBASE_API_KEY`: Your Firebase API Key.
+   - `VITE_FIREBASE_AUTH_DOMAIN`: Your Firebase Auth Domain.
+   - `VITE_FIREBASE_PROJECT_ID`: Your Firebase Project ID.
+   - `VITE_FIREBASE_STORAGE_BUCKET`: Your Firebase Storage Bucket.
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: Your Firebase Messaging Sender ID.
+   - `VITE_FIREBASE_APP_ID`: Your Firebase App ID.
+
+The `ReferenceError: __dirname is not defined` error has been fixed by properly defining `__dirname` and `__filename` using `fileURLToPath` for the ESM environment in both the server code and the build script banner.
 
 ### Firebase (Primary client-side backend)
 - **Firebase Auth**: Google sign-in popup authentication
