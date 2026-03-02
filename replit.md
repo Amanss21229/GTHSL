@@ -8,6 +8,12 @@ This is a full-stack web application for NEET and JEE exam preparation. It provi
 
 Preferred communication style: Simple, everyday language.
 
+## Security Notes
+
+- Admin passwords are stored as server-side env vars (`ADMIN_PASS1`, `ADMIN_PASS2`) — NOT as VITE_ prefixed vars
+- Admin authentication is validated server-side via `/api/admin/auth` endpoint — passwords are never sent to the client bundle
+- The old insecure approach (VITE_ADMIN_PASS1/VITE_ADMIN_PASS2 in userenv) has been removed
+
 ## System Architecture
 
 ### Frontend

@@ -121,9 +121,6 @@ export default function Admin() {
     }
   };
 
-  const ADMIN_PASS1 = import.meta.env.VITE_ADMIN_PASS1;
-  const ADMIN_PASS2 = import.meta.env.VITE_ADMIN_PASS2;
-
   useEffect(() => {
     if (step === 'dashboard_preview') {
       const timer = setTimeout(() => {
@@ -134,33 +131,70 @@ export default function Admin() {
     }
   }, [step]);
 
-  const handlePass1Submit = (e: React.FormEvent) => {
+  const handlePass1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passInput === ADMIN_PASS1) {
-      setStep('dashboard_preview');
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Access Denied",
-        description: "Incorrect primary password."
+    setStep('checking');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 1, password: passInput }),
       });
+      if (res.ok) {
+        setStep('dashboard_preview');
+      } else {
+        const data = await res.json();
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: data.message || "Incorrect primary password."
+        });
+        setPassInput("");
+        setStep('pass1');
+      }
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Could not verify password." });
       setPassInput("");
+      setStep('pass1');
     }
   };
 
-  const handlePass2Submit = (e: React.FormEvent) => {
+  const handlePass2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passInput === ADMIN_PASS2) {
-      setStep('authorized');
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Security Violation",
-        description: "Incorrect final password. Logging out..."
+    setStep('checking');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 2, password: passInput }),
       });
-      setTimeout(() => setLocation("/"), 1500);
+      if (res.ok) {
+        setStep('authorized');
+      } else {
+        const data = await res.json();
+        toast({
+          variant: "destructive",
+          title: "Security Violation",
+          description: data.message || "Incorrect final password. Logging out..."
+        });
+        setTimeout(() => setLocation("/"), 1500);
+      }
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Could not verify password." });
+      setStep('pass2');
     }
   };
+
+  if (step === 'checking') {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background p-4">
+        <div className="glass-card p-8 rounded-2xl w-full max-w-md space-y-6 text-center">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground text-sm">Verifying...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'pass1') {
     return (

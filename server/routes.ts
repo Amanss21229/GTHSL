@@ -41,6 +41,24 @@ export async function registerRoutes(
     next();
   }, express.static(uploadDir));
 
+  // Server-side admin authentication endpoint (passwords never exposed to client)
+  app.post("/api/admin/auth", (req, res) => {
+    const { step, password } = req.body;
+    if (step === 1) {
+      if (password === process.env.ADMIN_PASS1) {
+        return res.json({ success: true });
+      }
+      return res.status(401).json({ success: false, message: "Incorrect primary password." });
+    }
+    if (step === 2) {
+      if (password === process.env.ADMIN_PASS2) {
+        return res.json({ success: true });
+      }
+      return res.status(401).json({ success: false, message: "Incorrect final password." });
+    }
+    return res.status(400).json({ success: false, message: "Invalid step." });
+  });
+
   app.post("/api/upload", upload.single("file"), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
