@@ -127,11 +127,41 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+    try {
+      const msgRef = doc(db, "global_chat", messageId);
+      const msg = messages.find(m => m.id === messageId);
+      if (!msg) return;
+
+      const currentReactions = msg.reactions || {};
+      const usersWhoReacted = currentReactions[emoji] || [];
+      
+      let newUsers;
+      if (usersWhoReacted.includes(user.uid)) {
+        newUsers = usersWhoReacted.filter((uid: string) => uid !== user.uid);
+      } else {
+        newUsers = [...usersWhoReacted, user.uid];
+      }
+
+      const newReactions = { ...currentReactions, [emoji]: newUsers };
+      if (newUsers.length === 0) {
+        delete newReactions[emoji];
+      }
+
+      await updateDoc(msgRef, { reactions: newReactions });
+    } catch (error: any) {
+      console.error("Reaction error:", error);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user) return;
 
     try {
+      const isOwner = user.email === import.meta.env.VITE_ADMIN_MAIL;
       const messageData: any = {
         userId: user.uid,
         userName: user.displayName || user.email?.split('@')[0] || "Student",
@@ -139,7 +169,7 @@ export default function Chat() {
         content: newMessage.trim(),
         createdAt: serverTimestamp(),
         isVerified: !!verifiedUsers?.includes(user.uid),
-        role: user.email === import.meta.env.VITE_ADMIN_MAIL ? 'owner' : (user.role || 'student'),
+        role: isOwner ? 'owner' : (user.role || 'student'),
         reactions: {}
       };
 
@@ -148,8 +178,14 @@ export default function Chat() {
           id: replyingTo.id,
           content: replyingTo.content,
           userName: replyingTo.userName,
+          userId: replyingTo.userId,
           imageUrl: replyingTo.imageUrl || null
         };
+        
+        // Mention notification for the person being replied to
+        if (replyingTo.userId !== user.uid) {
+          messageData.mention = replyingTo.userId;
+        }
       }
 
       await addDoc(collection(db, "global_chat"), messageData);
@@ -265,12 +301,13 @@ export default function Chat() {
                   const isOwn = msg.userId === user?.uid;
                   const isAdmin = msg.role === 'admin';
                   const isOwner = msg.role === 'owner';
+                  const isMentioned = msg.mention === user?.uid;
                   return (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       key={msg.id} 
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group mb-1`}
+                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group mb-1 ${isMentioned ? 'bg-primary/5 rounded-lg py-1 px-2 border-l-2 border-primary' : ''}`}
                     >
                       <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
                         <div className="relative group/msg">
