@@ -141,21 +141,31 @@ export default function Chat() {
       if (!msg) return;
 
       const currentReactions = msg.reactions || {};
+      const reactionsData = msg.reactionsData || {};
       const usersWhoReacted = currentReactions[emoji] || [];
+      const userNamesWhoReacted = reactionsData[emoji] || [];
       
       let newUsers;
+      let newNames;
       if (usersWhoReacted.includes(user.uid)) {
         newUsers = usersWhoReacted.filter((uid: string) => uid !== user.uid);
+        newNames = userNamesWhoReacted.filter((name: string) => name !== (user.displayName || user.email?.split('@')[0]));
       } else {
         newUsers = [...usersWhoReacted, user.uid];
+        newNames = [...userNamesWhoReacted, (user.displayName || user.email?.split('@')[0])];
       }
 
       const newReactions = { ...currentReactions, [emoji]: newUsers };
+      const newReactionsData = { ...reactionsData, [emoji]: newNames };
       if (newUsers.length === 0) {
         delete newReactions[emoji];
+        delete newReactionsData[emoji];
       }
 
-      await updateDoc(msgRef, { reactions: newReactions });
+      await updateDoc(msgRef, { 
+        reactions: newReactions,
+        reactionsData: newReactionsData
+      });
     } catch (error: any) {
       console.error("Reaction error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -175,7 +185,8 @@ export default function Chat() {
         createdAt: serverTimestamp(),
         isVerified: Array.isArray(verifiedUsers) && verifiedUsers.includes(user.uid),
         role: isOwnerAccount ? 'owner' : (user.role || 'student'),
-        reactions: {}
+        reactions: {},
+        reactionsData: {}
       };
 
       if (replyingTo) {
@@ -193,6 +204,17 @@ export default function Chat() {
       }
 
       await addDoc(collection(db, "global_chat"), messageData);
+      
+      // Auto-cleanup old messages (7 days) if owner
+      if (isOwnerAccount) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const oldMessagesQuery = query(collection(db, "global_chat"), where("createdAt", "<", sevenDaysAgo));
+        onSnapshot(oldMessagesQuery, (snapshot) => {
+          snapshot.docs.forEach(doc => deleteDoc(doc.ref));
+        });
+      }
+
       setNewMessage("");
       setReplyingTo(null);
     } catch (error: any) {
@@ -219,7 +241,8 @@ export default function Chat() {
         createdAt: serverTimestamp(),
         isVerified: Array.isArray(verifiedUsers) && verifiedUsers.includes(user.uid),
         role: isOwnerAccount ? 'owner' : (user.role || 'student'),
-        reactions: {}
+        reactions: {},
+        reactionsData: {}
       };
 
       await addDoc(collection(db, "global_chat"), messageData);
@@ -366,22 +389,33 @@ export default function Chat() {
                             <div className="flex items-center justify-end gap-2 mt-1">
                               <div className="flex -space-x-1 items-center">
                                 {msg.reactions && Object.entries(msg.reactions as Record<string, string[]>).map(([emoji, uids]) => (
-                                  <button 
-                                    key={emoji} 
-                                    onClick={() => toggleReaction(msg.id, emoji)}
-                                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] transition-all transform hover:scale-110 active:scale-95 border ${
-                                      uids.includes(user.uid) 
-                                        ? 'bg-primary/20 text-primary border-primary/30 z-10' 
-                                        : 'bg-muted/80 text-muted-foreground border-transparent'
-                                    }`}
-                                  >
-                                    <span>{emoji}</span>
-                                    {uids.length > 1 && <span className="font-bold">{uids.length}</span>}
-                                  </button>
+                                  <Popover key={emoji}>
+                                    <PopoverTrigger asChild>
+                                      <button 
+                                        onClick={() => toggleReaction(msg.id, emoji)}
+                                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] transition-all transform hover:scale-110 active:scale-95 border ${
+                                          uids.includes(user.uid) 
+                                            ? 'bg-primary/20 text-primary border-primary/30 z-10' 
+                                            : 'bg-muted/80 text-muted-foreground border-transparent'
+                                        }`}
+                                      >
+                                        <span>{emoji}</span>
+                                        {uids.length > 0 && <span className="font-bold">{uids.length}</span>}
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent side="top" className="w-auto p-2 text-[10px] max-w-[150px]">
+                                      <p className="font-bold border-b mb-1 pb-1">Reacted by:</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {msg.reactionsData?.[emoji]?.map((name: string, i: number) => (
+                                          <span key={i} className="bg-muted px-1 rounded">{name}</span>
+                                        ))}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                 ))}
                               </div>
                               <span className={`text-[9px] font-medium tracking-widest ${isOwn || isOwner ? 'text-white/70' : 'text-muted-foreground/60'}`}>
-                                {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {msg.createdAt.toLocaleDateString([], { month: 'short', day: 'numeric' })} {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                           </div>
@@ -409,7 +443,7 @@ export default function Chat() {
                               </PopoverContent>
                             </Popover>
 
-                            {(isOwn || isAdmin || user.role === 'owner') && (
+                            {(isOwn || isOwnerAccount) && (
                               <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full shadow-lg border border-border/50 bg-background/95 backdrop-blur-md text-destructive hover:bg-destructive/10" onClick={() => deleteMessage(msg.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -457,7 +491,13 @@ export default function Chat() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent side="top" align="start" className="w-auto p-0 border-none rounded-3xl overflow-hidden shadow-2xl">
-                    <Picker data={data} onEmojiSelect={addEmoji} theme="dark" set="apple" />
+                    <Picker 
+                      data={data} 
+                      onEmojiSelect={addEmoji} 
+                      theme="dark" 
+                      native={true}
+                      skinPickerVariant="none"
+                    />
                   </PopoverContent>
                 </Popover>
               </div>

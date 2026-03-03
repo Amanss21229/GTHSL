@@ -202,12 +202,12 @@ export default function Admin() {
         <div className="glass-card p-8 rounded-2xl w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold">Admin Portal</h2>
-            <p className="text-muted-foreground text-sm">Enter primary access password</p>
+            <p className="text-muted-foreground text-sm">Enter Admin Portal access password</p>
           </div>
           <form onSubmit={handlePass1Submit} className="space-y-4">
             <Input 
               type="password" 
-              placeholder="Primary Password" 
+              placeholder="Admin Password (All your Activity will be recorded through your mic and camera)" 
               value={passInput}
               onChange={e => setPassInput(e.target.value)}
               autoFocus
@@ -230,12 +230,12 @@ export default function Admin() {
           </div>
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold text-destructive">Error Occurred</h2>
-            <p className="text-muted-foreground text-sm">A security check is required. Enter final verification password.</p>
+            <p className="text-muted-foreground text-sm">A security check is required. Enter your Admin Portal verification password Again.</p>
           </div>
           <form onSubmit={handlePass2Submit} className="space-y-4">
             <Input 
               type="password" 
-              placeholder="Final Password" 
+              placeholder="Re-Enter your Password" 
               value={passInput}
               onChange={e => setPassInput(e.target.value)}
               autoFocus
