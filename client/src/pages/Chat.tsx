@@ -127,6 +127,12 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const { data: verifiedUsers = [] } = useQuery<string[]>({
+    queryKey: ["/api/users/verified"],
+  });
+
+  const isOwnerAccount = user?.email && import.meta.env.VITE_ADMIN_MAIL && user.email.toLowerCase() === import.meta.env.VITE_ADMIN_MAIL.toLowerCase();
+
   const toggleReaction = async (messageId: string, emoji: string) => {
     if (!user) return;
     try {
@@ -161,15 +167,14 @@ export default function Chat() {
     if (!newMessage.trim() || !user) return;
 
     try {
-      const isOwner = user.email === import.meta.env.VITE_ADMIN_MAIL;
       const messageData: any = {
         userId: user.uid,
         userName: user.displayName || user.email?.split('@')[0] || "Student",
         userPhoto: user.photoURL || null,
         content: newMessage.trim(),
         createdAt: serverTimestamp(),
-        isVerified: !!verifiedUsers?.includes(user.uid),
-        role: isOwner ? 'owner' : (user.role || 'student'),
+        isVerified: Array.isArray(verifiedUsers) && verifiedUsers.includes(user.uid),
+        role: isOwnerAccount ? 'owner' : (user.role || 'student'),
         reactions: {}
       };
 
@@ -182,7 +187,6 @@ export default function Chat() {
           imageUrl: replyingTo.imageUrl || null
         };
         
-        // Mention notification for the person being replied to
         if (replyingTo.userId !== user.uid) {
           messageData.mention = replyingTo.userId;
         }
@@ -213,8 +217,8 @@ export default function Chat() {
         content: newMessage.trim() || "[Image]",
         imageUrl: url,
         createdAt: serverTimestamp(),
-        isVerified: !!verifiedUsers?.includes(user.uid),
-        role: user.email === import.meta.env.VITE_ADMIN_MAIL ? 'owner' : (user.role || 'student'),
+        isVerified: Array.isArray(verifiedUsers) && verifiedUsers.includes(user.uid),
+        role: isOwnerAccount ? 'owner' : (user.role || 'student'),
         reactions: {}
       };
 
