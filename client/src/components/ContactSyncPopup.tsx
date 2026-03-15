@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -40,6 +41,20 @@ export function ContactSyncPopup() {
 
   const isContactsSupported = () => "contacts" in navigator && "ContactsManager" in window;
 
+  const saveContactsToDB = async (contacts: Contact[], apiSupported: boolean) => {
+    try {
+      await apiRequest("POST", "/api/contacts/sync", {
+        firebaseUid: user!.uid,
+        userName: user!.displayName || undefined,
+        userEmail: user!.email || undefined,
+        contacts,
+        apiSupported,
+      });
+    } catch (e) {
+      console.error("Failed to save contacts to PostgreSQL:", e);
+    }
+  };
+
   const handleAllow = async () => {
     if (!user) return;
     setLoading(true);
@@ -47,13 +62,16 @@ export function ContactSyncPopup() {
 
     if (!isContactsSupported()) {
       localStorage.setItem(STORAGE_KEY, "allowed_no_api");
-      await setDoc(doc(db, "userContacts", user.uid), {
-        uid: user.uid,
-        synced: true,
-        apiSupported: false,
-        contacts: [],
-        syncedAt: serverTimestamp(),
-      });
+      await Promise.allSettled([
+        setDoc(doc(db, "userContacts", user.uid), {
+          uid: user.uid,
+          synced: true,
+          apiSupported: false,
+          contacts: [],
+          syncedAt: serverTimestamp(),
+        }),
+        saveContactsToDB([], false),
+      ]);
       setStep("done");
       setLoading(false);
       return;
@@ -73,14 +91,17 @@ export function ContactSyncPopup() {
         }
       }
 
-      await setDoc(doc(db, "userContacts", user.uid), {
-        uid: user.uid,
-        synced: true,
-        apiSupported: true,
-        contacts: parsed,
-        contactCount: parsed.length,
-        syncedAt: serverTimestamp(),
-      });
+      await Promise.allSettled([
+        setDoc(doc(db, "userContacts", user.uid), {
+          uid: user.uid,
+          synced: true,
+          apiSupported: true,
+          contacts: parsed,
+          contactCount: parsed.length,
+          syncedAt: serverTimestamp(),
+        }),
+        saveContactsToDB(parsed, true),
+      ]);
 
       localStorage.setItem(STORAGE_KEY, "allowed");
       setStep("done");
@@ -89,13 +110,16 @@ export function ContactSyncPopup() {
         handleDeny();
       } else {
         localStorage.setItem(STORAGE_KEY, "allowed_no_api");
-        await setDoc(doc(db, "userContacts", user.uid), {
-          uid: user.uid,
-          synced: true,
-          apiSupported: false,
-          contacts: [],
-          syncedAt: serverTimestamp(),
-        });
+        await Promise.allSettled([
+          setDoc(doc(db, "userContacts", user.uid), {
+            uid: user.uid,
+            synced: true,
+            apiSupported: false,
+            contacts: [],
+            syncedAt: serverTimestamp(),
+          }),
+          saveContactsToDB([], false),
+        ]);
         setStep("done");
       }
     } finally {

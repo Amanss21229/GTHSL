@@ -15,6 +15,7 @@ import Profile from "@/pages/Profile";
 import Results from "@/pages/Results";
 import PrivateChat from "@/pages/PrivateChat";
 import { ContactSyncPopup } from "@/components/ContactSyncPopup";
+import { PWAInstallButton } from "@/components/PWAInstallButton";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <ContactSyncPopup />
+        <PWAInstallButton />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>

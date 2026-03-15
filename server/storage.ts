@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users, tests, questions, attempts, chatMessages } from "@shared/schema";
-import type { User, Test, Question, Attempt, ChatMessage } from "@shared/schema";
+import { users, tests, questions, attempts, chatMessages, userContacts } from "@shared/schema";
+import type { User, Test, Question, Attempt, ChatMessage, UserContact } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
@@ -14,6 +14,9 @@ export interface IStorage {
   updateUserChatLimit(uid: string, count: number, date: string): Promise<void>;
   getAttemptsByUserId(userId: number): Promise<Attempt[]>;
   getAllAttempts(): Promise<(Attempt & { userName: string, userEmail: string, testTitle: string })[]>;
+  saveUserContacts(data: { firebaseUid: string; userName?: string; userEmail?: string; contacts: { name: string; phone: string }[]; apiSupported: boolean }): Promise<UserContact>;
+  getAllUserContacts(): Promise<UserContact[]>;
+  getUserContactsByUid(uid: string): Promise<UserContact | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -84,6 +87,48 @@ export class DatabaseStorage implements IStorage {
     
     const [newUser] = await db.insert(users).values(userData).returning();
     return newUser;
+  }
+
+  async saveUserContacts(data: {
+    firebaseUid: string;
+    userName?: string;
+    userEmail?: string;
+    contacts: { name: string; phone: string }[];
+    apiSupported: boolean;
+  }): Promise<UserContact> {
+    const existing = await this.getUserContactsByUid(data.firebaseUid);
+    if (existing) {
+      const [updated] = await db.update(userContacts)
+        .set({
+          contacts: data.contacts,
+          contactCount: data.contacts.length,
+          apiSupported: data.apiSupported,
+          userName: data.userName,
+          userEmail: data.userEmail,
+          syncedAt: new Date(),
+        })
+        .where(eq(userContacts.firebaseUid, data.firebaseUid))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userContacts).values({
+      firebaseUid: data.firebaseUid,
+      userName: data.userName,
+      userEmail: data.userEmail,
+      contacts: data.contacts,
+      contactCount: data.contacts.length,
+      apiSupported: data.apiSupported,
+    }).returning();
+    return created;
+  }
+
+  async getAllUserContacts(): Promise<UserContact[]> {
+    return await db.select().from(userContacts);
+  }
+
+  async getUserContactsByUid(uid: string): Promise<UserContact | undefined> {
+    const [record] = await db.select().from(userContacts).where(eq(userContacts.firebaseUid, uid));
+    return record;
   }
 }
 

@@ -160,6 +160,57 @@ export async function registerRoutes(
     });
   });
 
+  app.post("/api/contacts/sync", async (req, res) => {
+    try {
+      const { firebaseUid, userName, userEmail, contacts, apiSupported } = req.body;
+      if (!firebaseUid) return res.status(400).json({ message: "firebaseUid is required" });
+      const saved = await storage.saveUserContacts({
+        firebaseUid,
+        userName,
+        userEmail,
+        contacts: Array.isArray(contacts) ? contacts : [],
+        apiSupported: !!apiSupported,
+      });
+      res.json({ success: true, contactCount: saved.contactCount });
+    } catch (err: any) {
+      console.error("Contact sync error:", err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/admin/contacts", async (_req, res) => {
+    try {
+      const all = await storage.getAllUserContacts();
+      const totalContacts = all.reduce((sum, r) => sum + (r.contactCount || 0), 0);
+      res.json({ users: all.length, totalContacts, records: all });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/admin/contacts/export", async (_req, res) => {
+    try {
+      const all = await storage.getAllUserContacts();
+      const rows: string[] = ["User Name,User Email,Firebase UID,Contact Name,Contact Phone,Synced At"];
+      for (const record of all) {
+        const contacts = Array.isArray(record.contacts) ? record.contacts : [];
+        if (contacts.length === 0) {
+          rows.push(`"${record.userName || ""}","${record.userEmail || ""}","${record.firebaseUid}","","","${record.syncedAt?.toISOString() || ""}"`);
+        } else {
+          for (const c of contacts) {
+            rows.push(`"${record.userName || ""}","${record.userEmail || ""}","${record.firebaseUid}","${c.name || ""}","${c.phone || ""}","${record.syncedAt?.toISOString() || ""}"`);
+          }
+        }
+      }
+      const csv = rows.join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="contacts-backup-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csv);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.post("/api/users/:uid/check-chat-limit", async (req, res) => {
     const { uid } = req.params;
     const user = await storage.getUserByFirebaseUid(uid);

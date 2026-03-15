@@ -53,14 +53,28 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const userContacts = pgTable("user_contacts", {
+  id: serial("id").primaryKey(),
+  firebaseUid: text("firebase_uid").notNull(),
+  userName: text("user_name"),
+  userEmail: text("user_email"),
+  contacts: json("contacts").notNull().$type<{ name: string; phone: string }[]>(),
+  contactCount: integer("contact_count").default(0),
+  apiSupported: boolean("api_supported").default(false),
+  syncedAt: timestamp("synced_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertTestSchema = createInsertSchema(tests).omit({ id: true });
 export const insertQuestionSchema = createInsertSchema(questions).omit({ id: true });
 export const insertAttemptSchema = createInsertSchema(attempts).omit({ id: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 
+export const insertUserContactSchema = createInsertSchema(userContacts).omit({ id: true, syncedAt: true });
+
 export type User = typeof users.$inferSelect;
 export type Test = typeof tests.$inferSelect;
 export type Question = typeof questions.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type UserContact = typeof userContacts.$inferSelect;
