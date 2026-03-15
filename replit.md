@@ -4,6 +4,8 @@
 
 This is a full-stack web application for NEET and JEE exam preparation. It provides a test series platform where students can take timed practice tests with image-based questions, view detailed results with analytics charts, and interact through a chat feature. An admin panel allows creating tests and uploading question images. The platform targets medical (NEET) and engineering (JEE) entrance exam aspirants.
 
+The app is also a **Progressive Web App (PWA)** — users can install it on their Android/iOS home screen and use it like a native app. This is done via `client/public/manifest.json` and `client/public/sw.js` (service worker).
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
