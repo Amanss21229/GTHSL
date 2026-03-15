@@ -52,7 +52,8 @@ The app has a **hybrid data architecture** that's important to understand:
 - **chat_messages**: id, testId, userId, content, likes, createdAt
 
 ### Pages / Routes
-- `/` - Home page with NEET and JEE section cards
+- `/` - Home page with NEET and JEE section cards (Contact sync popup shows on first login)
+- `/private-chat` - Private one-to-one chat (WhatsApp-style, requires contact sync permission)
 - `/section/:type` - Section page showing subsections (PYQs, PW, Allen, Akash, Other) and test listings
 - `/test/:id` - Test-taking interface with timer, question navigation, answer selection, mark-for-review
 - `/result/:id` - Result page with score breakdown, pie/bar charts, accuracy stats

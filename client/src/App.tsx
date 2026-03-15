@@ -13,6 +13,8 @@ import Admin from "@/pages/Admin";
 import Chat from "@/pages/Chat";
 import Profile from "@/pages/Profile";
 import Results from "@/pages/Results";
+import PrivateChat from "@/pages/PrivateChat";
+import { ContactSyncPopup } from "@/components/ContactSyncPopup";
 
 function Router() {
   return (
@@ -23,6 +25,7 @@ function Router() {
       <Route path="/result/:id" component={Result} />
       <Route path="/admin" component={Admin} />
       <Route path="/chat" component={Chat} />
+      <Route path="/private-chat" component={PrivateChat} />
       <Route path="/profile" component={Profile} />
       <Route path="/results" component={Results} />
       <Route component={NotFound} />
@@ -35,6 +38,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <ContactSyncPopup />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>

@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare, HeadphonesIcon, Send, MessageCircle, CheckCircle2, Calendar, Globe } from "lucide-react";
+import { Moon, Sun, User as UserIcon, LogOut, Award, MessageSquare, HeadphonesIcon, Send, MessageCircle, CheckCircle2, Calendar, Globe, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
@@ -41,8 +41,8 @@ export function Navbar() {
   };
 
   const t = {
-    en: { discussion: "Discussion", support: "Support", signIn: "Sign In", profile: "Profile", results: "My Results", logout: "Log out" },
-    hi: { discussion: "चर्चा", support: "सहायता", signIn: "साइन इन", profile: "प्रोफ़ाइल", results: "मेरे परिणाम", logout: "लॉग आउट" }
+    en: { discussion: "Discussion", privateChat: "DMs", support: "Support", signIn: "Sign In", profile: "Profile", results: "My Results", logout: "Log out" },
+    hi: { discussion: "चर्चा", privateChat: "DMs", support: "सहायता", signIn: "साइन इन", profile: "प्रोफ़ाइल", results: "मेरे परिणाम", logout: "लॉग आउट" }
   }[lang];
 
   return (
@@ -69,6 +69,13 @@ export function Navbar() {
             <Button variant="ghost" size="sm" className="gap-2 flex font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors h-10 px-3">
               <MessageSquare className="h-5 w-5" />
               <span className="hidden sm:inline">{t.discussion}</span>
+            </Button>
+          </Link>
+
+          <Link href="/private-chat">
+            <Button variant="ghost" size="sm" className="gap-2 flex font-bold hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors h-10 px-3">
+              <Lock className="h-5 w-5" />
+              <span className="hidden sm:inline">{t.privateChat}</span>
             </Button>
           </Link>
 
